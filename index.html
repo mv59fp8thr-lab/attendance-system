@@ -37,7 +37,7 @@
 
 <section class="card"><h2>この人の履歴</h2><div class="history" id="history"></div><button class="danger" id="clearBtn" type="button">この人の履歴をすべて削除</button></section>
 
-<section class="card"><h2>利用者管理</h2><div class="notice">登録した名前ごとに勤怠データが分かれて保存されます。</div><div class="user-list" id="userList"></div></section>
+<section class="card"><h2>利用者管理</h2><div class="notice">退職した人など、今後使わない名前はここから一覧から外せます。<br>※勤怠データは削除せず、この端末に残ります。</div><div class="user-list" id="userList"></div></section>
 </div>
 
 <p class="notice">※ データはこの端末のブラウザ内に保存されます。別のスマホやPCとは自動同期されません。複数人で同じ端末を使う場合は、利用者を切り替えてください。</p>
@@ -72,7 +72,7 @@ function renderUsers(){
 function showApp(){const name=currentUser();document.getElementById("userSetup").classList.toggle("hidden",!!name);document.getElementById("app").classList.toggle("hidden",!name);document.getElementById("currentUser").textContent=name;renderUsers();render()}
 function selectUser(name){setCurrentUser(name);migrateOldData(name);showApp()}
 function addUser(){const input=document.getElementById("nameInput"),name=input.value.trim();if(!name){alert("名前を入力してください");return}const us=users();if(!us.includes(name)){us.push(name);saveUsers(us)}setCurrentUser(name);input.value="";showApp()}
-function deleteUser(name){if(!confirm(`${name}さんの登録と勤怠データを削除しますか？`))return;saveUsers(users().filter(x=>x!==name));localStorage.removeItem(userKey(name));if(currentUser()===name){localStorage.removeItem(CURRENT_KEY);document.getElementById("userSetup").classList.remove("hidden");document.getElementById("app").classList.add("hidden")}renderUsers();render()}
+function deleteUser(name){if(!confirm(`${name}さんを利用者一覧から外しますか？\n\n勤怠データは削除されず、この端末に残ります。`))return;saveUsers(users().filter(x=>x!==name));if(currentUser()===name){localStorage.removeItem(CURRENT_KEY);document.getElementById("userSetup").classList.remove("hidden");document.getElementById("app").classList.add("hidden")}renderUsers();render()}
 function switchUser(){document.getElementById("app").classList.add("hidden");document.getElementById("userSetup").classList.remove("hidden");renderUsers()}
 
 function render(){
