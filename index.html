@@ -36,7 +36,7 @@
 
 <section class="card"><div class="clock" id="clock">--:--:--</div><div class="status" id="status">読み込み中…</div><div class="buttons"><button id="inBtn" type="button">出勤</button><button id="outBtn" type="button">退勤</button><button id="breakBtn" type="button">休憩開始</button></div></section>
 
-<section class="card"><h2>今日の記録</h2><div class="row"><span class="label">出勤時刻</span><span class="value" id="inTime">--:--</span></div><div class="row"><span class="label">休憩回数</span><span class="value" id="breakCount">0回</span></div><div class="row"><span class="label">休憩時間</span><span class="value" id="breakTime">0時間0分</span></div><div class="row"><span class="label">退勤時刻</span><span class="value" id="outTime">--:--</span></div><div class="row"><span class="label">実働時間</span><span class="value" id="workTime">--</span></div><div id="breakDetails"></div></section>
+<section class="card"><h2>今日の記録</h2><div class="row"><span class="label">出勤時刻</span><span class="value" id="inTime">--:--</span></div><div class="row"><span class="label">勤務回数</span><span class="value" id="sessionCount">0回</span></div><div class="row"><span class="label">休憩回数</span><span class="value" id="breakCount">0回</span></div><div class="row"><span class="label">休憩時間</span><span class="value" id="breakTime">0時間0分</span></div><div class="row"><span class="label">退勤時刻</span><span class="value" id="outTime">--:--</span></div><div class="row"><span class="label">実働時間</span><span class="value" id="workTime">--</span></div><div id="breakDetails"></div></section>
 
 </div>
 
@@ -323,23 +323,30 @@ function render(){
  document.getElementById("inTime").textContent=firstIn(today)||"--:--";document.getElementById("breakCount").textContent=`${breaks.length}回`;document.getElementById("breakTime").textContent=formatMinutes(breakTotal(today));document.getElementById("outTime").textContent=working?"--:--":(lastOut(today)||"--:--");
  let work="--";if(sessions.length)work=formatMinutes(workTotal(today,true));document.getElementById("workTime").textContent=work;
  const details=document.getElementById("breakDetails");details.innerHTML="";if(breaks.length){const title=document.createElement("div");title.className="label";title.style.marginTop="12px";title.textContent="休憩の内訳";const list=document.createElement("ul");list.className="break-list";breaks.forEach((b,i)=>{const li=document.createElement("li");li.className="row";const mins=b.start&&b.end?diffMinutes(toMinutes(b.start),toMinutes(b.end)):0;li.innerHTML=`<span class="label">休憩${i+1}</span><span class="value">${b.start||"--:--"}〜${b.end||"--:--"}${b.end?`（${formatMinutes(mins)}）`:`（休憩中）`}</span>`;list.appendChild(li)});details.append(title,list)}
- const inBtn=document.getElementById("inBtn"),outBtn=document.getElementById("outBtn"),breakBtn=document.getElementById("breakBtn");inBtn.disabled=working;outBtn.disabled=!working||activeBreak(today);breakBtn.disabled=!working;breakBtn.textContent=activeBreak(today)?"休憩終了":"休憩開始";
+ const inBtn=document.getElementById("inBtn"),outBtn=document.getElementById("outBtn"),breakBtn=document.getElementById("breakBtn");document.getElementById("sessionCount").textContent=`${sessions.length}回`;inBtn.disabled=working||activeBreak(today);outBtn.disabled=!working||activeBreak(today);breakBtn.disabled=!working;breakBtn.textContent=activeBreak(today)?"休憩終了":"休憩開始";
  let status="本日は未出勤です";if(working&&activeBreak(today))status=`休憩中です（${breaks.length}回目）`;else if(working)status="勤務中です";else if(sessions.length)status="勤務終了・再出勤できます";document.getElementById("status").textContent=status;
  const adminHistorySel=document.getElementById("adminHistoryUserSelect");if(adminHistorySel)renderHistoryFor(adminHistorySel.value||name);
 }
 function punch(type){
  const name=currentUser();if(!name)return;const records=loadRecords(name),key=todayKey(),time=fmtTime(new Date());let r=records.find(x=>x.date===key);
  if(!r){r={date:key,breaks:[],sessions:[]};records.push(r)}
- if(!Array.isArray(r.breaks))r.breaks=[];if(!Array.isArray(r.sessions))r.sessions=getSessions(r);
+ if(!Array.isArray(r.breaks))r.breaks=[];
+ if(!Array.isArray(r.sessions))r.sessions=getSessions(r);
+ // 古いデータも勤務区間方式へ正規化
+ r.sessions=r.sessions.filter(x=>x&&x.in).map(x=>({in:x.in,out:x.out||null}));
  if(type==="in"){
-   if(activeSession(r)){alert("すでに出勤しています。");return;}
-   r.sessions.push({in:time,out:null});r.in=r.in||time;r.out="";
+   // 同じ日に退勤済みなら、何回でも新しい勤務区間を追加して合算する
+   if(activeSession(r)){return;}
+   r.sessions.push({in:time,out:null});
+   r.in=r.in||time;
+   r.out="";
  }else if(type==="out"){
-   if(!activeSession(r)){alert("先に出勤してください。");return;}
+   if(!activeSession(r))return;
    if(activeBreak(r)){alert("先に休憩を終了してください。");return;}
-   r.sessions[r.sessions.length-1].out=time;r.out=time;
+   r.sessions[r.sessions.length-1].out=time;
+   r.out=time;
  }
- saveRecords(name,records);render()
+ saveRecords(name,records);render();
 }
 function toggleBreak(){const name=currentUser();if(!name)return;const records=loadRecords(name),key=todayKey(),time=fmtTime(new Date());const r=records.find(x=>x.date===key);if(!r||!activeSession(r))return;if(!Array.isArray(r.breaks))r.breaks=[];if(activeBreak(r))r.breaks[r.breaks.length-1].end=time;else r.breaks.push({start:time,end:null});saveRecords(name,records);render()}
 
