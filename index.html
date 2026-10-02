@@ -18,7 +18,8 @@
     .buttons{display:grid;grid-template-columns:1fr 1fr;gap:12px}
     button{border:0;border-radius:14px;padding:17px 10px;font-size:18px;font-weight:700;color:white;cursor:pointer}
     button:active{transform:scale(.98)} #inBtn{background:#16a34a} #outBtn{background:#dc2626}
-    #inBtn:disabled,#outBtn:disabled{opacity:.35;cursor:not-allowed}
+    #breakBtn{grid-column:1/-1;background:#f59e0b}
+    #inBtn:disabled,#outBtn:disabled,#breakBtn:disabled{opacity:.35;cursor:not-allowed}
     .row{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #eef1f5}.row:last-child{border-bottom:0}
     .label{color:#667085}.value{font-weight:700}.empty{text-align:center;color:#98a2b3;padding:10px}
     .history{max-height:360px;overflow:auto}.entry{padding:12px 0;border-bottom:1px solid #eef1f5}
@@ -40,14 +41,18 @@
     <div class="buttons">
       <button id="inBtn" type="button">出勤</button>
       <button id="outBtn" type="button">退勤</button>
+      <button id="breakBtn" type="button">休憩開始</button>
     </div>
   </section>
 
   <section class="card">
     <h2>今日の記録</h2>
     <div class="row"><span class="label">出勤時刻</span><span class="value" id="inTime">--:--</span></div>
+    <div class="row"><span class="label">休憩開始</span><span class="value" id="breakStartTime">--:--</span></div>
+    <div class="row"><span class="label">休憩終了</span><span class="value" id="breakEndTime">--:--</span></div>
+    <div class="row"><span class="label">休憩時間</span><span class="value" id="breakTime">0時間0分</span></div>
     <div class="row"><span class="label">退勤時刻</span><span class="value" id="outTime">--:--</span></div>
-    <div class="row"><span class="label">勤務時間</span><span class="value" id="workTime">--</span></div>
+    <div class="row"><span class="label">実働時間</span><span class="value" id="workTime">--</span></div>
   </section>
 
   <section class="card">
@@ -60,7 +65,7 @@
 </div>
 
 <script>
-const KEY = "attendance_records_v1";
+const KEY = "attendance_records_v2";
 const pad = n => String(n).padStart(2,"0");
 const fmtTime = d => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 const fmtDate = d => `${d.getFullYear()}/${pad(d.getMonth()+1)}/${pad(d.getDate())}`;
@@ -68,6 +73,9 @@ const fmtDate = d => `${d.getFullYear()}/${pad(d.getMonth()+1)}/${pad(d.getDate(
 function load(){ try{return JSON.parse(localStorage.getItem(KEY)||"[]")}catch(e){return []} }
 function save(a){localStorage.setItem(KEY,JSON.stringify(a))}
 function todayKey(){return fmtDate(new Date())}
+function toMinutes(t){ if(!t)return null; const [h,m]=t.split(":").map(Number); return h*60+m; }
+function diffMinutes(start,end){ if(start==null||end==null)return 0; let d=end-start; if(d<0)d+=1440; return d; }
+function formatMinutes(mins){ return `${Math.floor(mins/60)}時間${mins%60}分`; }
 
 function render(){
   const now = new Date();
@@ -76,28 +84,43 @@ function render(){
 
   const records = load();
   const today = records.find(r=>r.date===todayKey());
+  const inBtn=document.getElementById("inBtn"), outBtn=document.getElementById("outBtn"), breakBtn=document.getElementById("breakBtn");
+
   document.getElementById("inTime").textContent = today?.in || "--:--";
+  document.getElementById("breakStartTime").textContent = today?.breakStart || "--:--";
+  document.getElementById("breakEndTime").textContent = today?.breakEnd || "--:--";
   document.getElementById("outTime").textContent = today?.out || "--:--";
+
+  let breakMins = 0;
+  if(today?.breakStart && today?.breakEnd) breakMins = diffMinutes(toMinutes(today.breakStart),toMinutes(today.breakEnd));
+  document.getElementById("breakTime").textContent = formatMinutes(breakMins);
 
   let work="--";
   if(today?.in && today?.out){
-    const [ih,im]=today.in.split(":").map(Number), [oh,om]=today.out.split(":").map(Number);
-    let mins=(oh*60+om)-(ih*60+im); if(mins<0) mins+=1440;
-    work=`${Math.floor(mins/60)}時間${mins%60}分`;
+    const total = diffMinutes(toMinutes(today.in),toMinutes(today.out));
+    work = formatMinutes(Math.max(0,total-breakMins));
   }
   document.getElementById("workTime").textContent=work;
 
-  const inBtn=document.getElementById("inBtn"), outBtn=document.getElementById("outBtn");
-  inBtn.disabled=!!today?.in; outBtn.disabled=!today?.in || !!today?.out;
-  document.getElementById("status").textContent =
-    !today ? "本日は未出勤です" : today.in && !today.out ? "勤務中です" : "本日の勤務は終了しています";
+  inBtn.disabled=!!today?.in;
+  outBtn.disabled=!today?.in || !!today?.out || !!today?.breakStart && !today?.breakEnd;
+  breakBtn.disabled=!today?.in || !!today?.out;
+  breakBtn.textContent = today?.breakStart && !today?.breakEnd ? "休憩終了" : "休憩開始";
+
+  let status="本日は未出勤です";
+  if(today?.in && !today?.out && today?.breakStart && !today?.breakEnd) status="休憩中です";
+  else if(today?.in && !today?.out) status="勤務中です";
+  else if(today?.out) status="本日の勤務は終了しています";
+  document.getElementById("status").textContent=status;
 
   const history=document.getElementById("history");
   history.innerHTML="";
   if(!records.length){history.innerHTML='<div class="empty">まだ記録がありません</div>';return}
   [...records].reverse().forEach(r=>{
+    const b = r.breakStart && r.breakEnd ? `　休憩 ${r.breakStart}〜${r.breakEnd}` : "";
+    const bm = r.breakStart && r.breakEnd ? `　休憩 ${formatMinutes(diffMinutes(toMinutes(r.breakStart),toMinutes(r.breakEnd)))}` : "";
     const el=document.createElement("div"); el.className="entry";
-    el.innerHTML=`<strong>${r.date}</strong><span class="small">出勤 ${r.in||"--:--"}　退勤 ${r.out||"--:--"}</span>`;
+    el.innerHTML=`<strong>${r.date}</strong><span class="small">出勤 ${r.in||"--:--"}${b}<br>退勤 ${r.out||"--:--"}${bm}</span>`;
     history.appendChild(el);
   });
 }
@@ -107,11 +130,22 @@ function punch(type){
   let r=records.find(x=>x.date===key);
   if(!r){r={date:key};records.push(r)}
   if(type==="in" && !r.in) r.in=time;
-  if(type==="out" && r.in && !r.out) r.out=time;
+  if(type==="out" && r.in && !r.out && !(r.breakStart && !r.breakEnd)) r.out=time;
   save(records); render();
 }
+
+function toggleBreak(){
+  const records=load(), key=todayKey(), time=fmtTime(new Date());
+  let r=records.find(x=>x.date===key);
+  if(!r || !r.in || r.out) return;
+  if(r.breakStart && !r.breakEnd) r.breakEnd=time;
+  else if(!r.breakStart) r.breakStart=time;
+  save(records); render();
+}
+
 document.getElementById("inBtn").addEventListener("click",()=>punch("in"));
 document.getElementById("outBtn").addEventListener("click",()=>punch("out"));
+document.getElementById("breakBtn").addEventListener("click",toggleBreak);
 document.getElementById("clearBtn").addEventListener("click",()=>{
   if(confirm("履歴をすべて削除しますか？")){localStorage.removeItem(KEY);render();}
 });
