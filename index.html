@@ -124,8 +124,20 @@ function toMinutes(t){if(!t)return null;const [h,m]=t.split(":").map(Number);ret
 function diffMinutes(s,e){if(s==null||e==null)return 0;let d=e-s;if(d<0)d+=1440;return d}
 function formatMinutes(m){return `${Math.floor(m/60)}時間${m%60}分`}
 function getBreaks(r){return Array.isArray(r?.breaks)?r.breaks:[]}
-function breakTotal(r){return getBreaks(r).reduce((sum,b)=>sum+(b.start&&b.end?diffMinutes(toMinutes(b.start),toMinutes(b.end)):0),0)}
-function activeBreak(r){const b=getBreaks(r);return b.length>0&&b[b.length-1].start&&!b[b.length-1].end}
+function getSessions(r){
+ if(Array.isArray(r?.sessions))return r.sessions;
+ if(r?.in)return [{in:r.in,out:r.out||null}];
+ return [];
+}
+function activeSession(r){const ss=getSessions(r);return ss.length>0&&ss[ss.length-1].in&&!ss[ss.length-1].out}
+function firstIn(r){const ss=getSessions(r);return ss.length?ss[0].in||null:null}
+function lastOut(r){const ss=getSessions(r);for(let i=ss.length-1;i>=0;i--)if(ss[i].out)return ss[i].out;return null}
+function workTotal(r,includeOpen=false){
+ const ss=getSessions(r);let total=0;const now=fmtTime(new Date());
+ ss.forEach(x=>{if(x?.in){const end=x.out||(includeOpen?now:null);if(end)total+=diffMinutes(toMinutes(x.in),toMinutes(end));}});
+ return Math.max(0,total-breakTotal(r));
+}
+function activeBreak(r){const b=getBreaks(r);return activeSession(r)&&b.length>0&&b[b.length-1].start&&!b[b.length-1].end}
 function todayKey(){return fmtDate(new Date())}
 
 function renderUsers(){
@@ -218,11 +230,11 @@ function renderHistoryFor(name){
  const records=loadRecords(name);
  if(!records.length){history.innerHTML='<div class="empty">まだ記録がありません</div>';return;}
  const sorted=[...records].sort((a,b)=>String(b.date).localeCompare(String(a.date)));
- const workedDays=sorted.filter(r=>r.in).length;
+ const workedDays=sorted.filter(r=>firstIn(r)).length;
  const totalBreak=sorted.reduce((sum,r)=>sum+breakTotal(r),0);
- const totalWork=sorted.reduce((sum,r)=>sum+(r.in&&r.out?Math.max(0,diffMinutes(toMinutes(r.in),toMinutes(r.out))-breakTotal(r)):0),0);
+ const totalWork=sorted.reduce((sum,r)=>sum+workTotal(r,false),0);
  summary.innerHTML=`<div class="summary-box"><span class="summary-label">出勤日数</span><strong>${workedDays}日</strong></div><div class="summary-box"><span class="summary-label">実働合計</span><strong>${formatMinutes(totalWork)}</strong></div><div class="summary-box"><span class="summary-label">休憩合計</span><strong>${formatMinutes(totalBreak)}</strong></div>`;
- sorted.forEach(r=>{const rs=getBreaks(r),el=document.createElement("div");el.className="entry";const work=r.in&&r.out?formatMinutes(Math.max(0,diffMinutes(toMinutes(r.in),toMinutes(r.out))-breakTotal(r))):"未確定";const status=r.out?"勤務終了":r.in?"勤務中・未退勤":"未出勤";const breakHtml=rs.length?`<div class="history-breaks"><span class="history-label">休憩の内訳</span>${rs.map((b,i)=>`<div class="history-break">休憩${i+1}：${b.start||"--:--"} ～ ${b.end||"--:--"}${b.start&&b.end?`（${formatMinutes(diffMinutes(toMinutes(b.start),toMinutes(b.end)))}）`:"（休憩中）"}</div>`).join("")}</div>`:"";el.innerHTML=`<div class="entry-head"><span class="entry-date">${r.date}</span><span class="entry-status">${status}</span></div><div class="entry-grid"><div class="history-item"><span class="history-label">出勤</span><span class="history-value">${r.in||"--:--"}</span></div><div class="history-item"><span class="history-label">退勤</span><span class="history-value">${r.out||"--:--"}</span></div><div class="history-item"><span class="history-label">休憩</span><span class="history-value">${formatMinutes(breakTotal(r))}</span></div><div class="history-item"><span class="history-label">実働</span><span class="history-value">${work}</span></div></div>${breakHtml}`;history.appendChild(el);});
+ sorted.forEach(r=>{const rs=getBreaks(r),el=document.createElement("div");el.className="entry";const work=getSessions(r).length?formatMinutes(workTotal(r,false)):"未確定";const status=activeSession(r)?"勤務中・未退勤":lastOut(r)?"勤務終了":"未出勤";const breakHtml=rs.length?`<div class="history-breaks"><span class="history-label">休憩の内訳</span>${rs.map((b,i)=>`<div class="history-break">休憩${i+1}：${b.start||"--:--"} ～ ${b.end||"--:--"}${b.start&&b.end?`（${formatMinutes(diffMinutes(toMinutes(b.start),toMinutes(b.end)))}）`:"（休憩中）"}</div>`).join("")}</div>`:"";el.innerHTML=`<div class="entry-head"><span class="entry-date">${r.date}</span><span class="entry-status">${status}</span></div><div class="entry-grid"><div class="history-item"><span class="history-label">出勤</span><span class="history-value">${firstIn(r)||"--:--"}</span></div><div class="history-item"><span class="history-label">退勤</span><span class="history-value">${lastOut(r)||"--:--"}</span></div><div class="history-item"><span class="history-label">休憩</span><span class="history-value">${formatMinutes(breakTotal(r))}</span></div><div class="history-item"><span class="history-label">実働</span><span class="history-value">${work}</span></div></div>${breakHtml}`;history.appendChild(el);});
 }
 function populateAdminHistoryUsers(){
  const sel=document.getElementById("adminHistoryUserSelect");if(!sel)return;
@@ -272,15 +284,15 @@ function renderCalendar(){
  const firstDay=new Date(calendarMonth.getFullYear(),calendarMonth.getMonth(),1).getDay();
  const days=new Date(calendarMonth.getFullYear(),calendarMonth.getMonth()+1,0).getDate();
  for(let i=0;i<firstDay;i++){const e=document.createElement("div");e.className="cal-day empty";grid.appendChild(e)}
- for(let day=1;day<=days;day++){const date=`${calendarMonth.getFullYear()}/${pad(calendarMonth.getMonth()+1)}/${pad(day)}`,r=map.get(date),e=document.createElement("button");e.type="button";e.className="cal-day";if(calendarSelectedDate===date)e.classList.add("selected");if(r?.out)e.classList.add("has-work");else if(r?.in)e.classList.add("incomplete");e.innerHTML=`<span class="num">${day}</span>${r?.in?`<span class="cal-dot${r.out?"":" incomplete"}"></span>`:""}`;e.onclick=()=>{calendarSelectedDate=date;renderCalendar();renderCalendarDetail(date,r,name)};grid.appendChild(e)}
+ for(let day=1;day<=days;day++){const date=`${calendarMonth.getFullYear()}/${pad(calendarMonth.getMonth()+1)}/${pad(day)}`,r=map.get(date),e=document.createElement("button");e.type="button";e.className="cal-day";if(calendarSelectedDate===date)e.classList.add("selected");if(r&&lastOut(r)&&!activeSession(r))e.classList.add("has-work");else if(r&&firstIn(r))e.classList.add("incomplete");e.innerHTML=`<span class="num">${day}</span>${r&&firstIn(r)?`<span class="cal-dot${lastOut(r)&&!activeSession(r)?"":" incomplete"}"></span>`:""}`;e.onclick=()=>{calendarSelectedDate=date;renderCalendar();renderCalendarDetail(date,r,name)};grid.appendChild(e)}
  if(calendarSelectedDate){const r=map.get(calendarSelectedDate);renderCalendarDetail(calendarSelectedDate,r,name)}else{const today=fmtDate(new Date());if(today.startsWith(`${calendarMonth.getFullYear()}/${pad(calendarMonth.getMonth()+1)}/`)){calendarSelectedDate=today;renderCalendar();renderCalendarDetail(today,map.get(today),name)}}
 }
 function renderCalendarDetail(date,r,name){
  const box=document.getElementById("calendarDetail");if(!box)return;
  if(!r){box.innerHTML=`<h4>${date}</h4><div class="notice">${name}さんの勤怠記録はありません。</div>`;return;}
- const bs=getBreaks(r),work=r.in&&r.out?formatMinutes(Math.max(0,diffMinutes(toMinutes(r.in),toMinutes(r.out))-breakTotal(r))):"未確定";
+ const bs=getBreaks(r),work=getSessions(r).length?formatMinutes(workTotal(r,false)):"未確定";
  const breaks=bs.length?bs.map((b,i)=>`休憩${i+1}：${b.start||"--:--"} ～ ${b.end||"--:--"}`).join("<br>"):"なし";
- box.innerHTML=`<h4>${date}　${r.out?"勤務終了":r.in?"勤務中・未退勤":"未出勤"}</h4><div class="detail-row"><span class="detail-label">利用者</span><span class="detail-value">${name}</span></div><div class="detail-row"><span class="detail-label">出勤</span><span class="detail-value">${r.in||"--:--"}</span></div><div class="detail-row"><span class="detail-label">退勤</span><span class="detail-value">${r.out||"--:--"}</span></div><div class="detail-row"><span class="detail-label">休憩</span><span class="detail-value">${formatMinutes(breakTotal(r))}</span></div><div class="detail-row"><span class="detail-label">実働</span><span class="detail-value">${work}</span></div><div class="detail-row"><span class="detail-label">休憩内訳</span><span class="detail-value">${breaks}</span></div>`;
+ box.innerHTML=`<h4>${date}　${activeSession(r)?"勤務中・未退勤":lastOut(r)?"勤務終了":"未出勤"}</h4><div class="detail-row"><span class="detail-label">利用者</span><span class="detail-value">${name}</span></div><div class="detail-row"><span class="detail-label">出勤</span><span class="detail-value">${firstIn(r)||"--:--"}</span></div><div class="detail-row"><span class="detail-label">退勤</span><span class="detail-value">${lastOut(r)||"--:--"}</span></div><div class="detail-row"><span class="detail-label">休憩</span><span class="detail-value">${formatMinutes(breakTotal(r))}</span></div><div class="detail-row"><span class="detail-label">実働</span><span class="detail-value">${work}</span></div><div class="detail-row"><span class="detail-label">休憩内訳</span><span class="detail-value">${breaks}</span></div>`;
 }
 function moveCalendarMonth(delta){calendarMonth=new Date(calendarMonth.getFullYear(),calendarMonth.getMonth()+delta,1);calendarSelectedDate="";renderCalendar()}
 function pad2(n){return String(n).padStart(2,"0")}
@@ -296,27 +308,39 @@ function renderMonthlySummary(){
  const [year,mon]=month.split("-").map(Number),prefix=`${year}/${pad2(mon)}/`;
  const records=loadRecords(name).filter(r=>String(r.date||"").startsWith(prefix)).sort((a,b)=>String(a.date).localeCompare(String(b.date)));
  let worked=0,completed=0,incomplete=0,totalBreak=0,totalWork=0;
- records.forEach(r=>{if(r.in)worked++;if(r.in&&!r.out)incomplete++;if(r.in&&r.out){completed++;totalBreak+=breakTotal(r);totalWork+=Math.max(0,diffMinutes(toMinutes(r.in),toMinutes(r.out))-breakTotal(r))}});
+ records.forEach(r=>{if(firstIn(r))worked++;if(activeSession(r))incomplete++;if(firstIn(r)&&lastOut(r)){completed++;totalBreak+=breakTotal(r);totalWork+=workTotal(r,false)}});
  const avg=completed?Math.round(totalWork/completed):0;
  title.textContent=`${year}年${mon}月　${name}さん`;
  cards.innerHTML=`<div class="monthly-card"><span class="monthly-label">出勤日数</span><strong>${worked}日</strong></div><div class="monthly-card"><span class="monthly-label">実働合計</span><strong>${formatMinutes(totalWork)}</strong></div><div class="monthly-card"><span class="monthly-label">休憩合計</span><strong>${formatMinutes(totalBreak)}</strong></div><div class="monthly-card"><span class="monthly-label">1日平均実働</span><strong>${formatMinutes(avg)}</strong></div>`;
- const details=records.length?records.map(r=>{const work=r.in&&r.out?formatMinutes(Math.max(0,diffMinutes(toMinutes(r.in),toMinutes(r.out))-breakTotal(r))):r.in?"未退勤":"未出勤";return `<div class="monthly-detail-row"><span>${r.date}</span><strong>${r.in||"--:--"} ～ ${r.out||"--:--"}　${work}</strong></div>`}).join(""):'<div class="empty">この月の勤怠記録はありません</div>';
+ const details=records.length?records.map(r=>{const work=firstIn(r)?formatMinutes(workTotal(r,false)):"未出勤";return `<div class="monthly-detail-row"><span>${r.date}</span><strong>${firstIn(r)||"--:--"} ～ ${lastOut(r)||"--:--"}　${work}</strong></div>`}).join(""):'<div class="empty">この月の勤怠記録はありません</div>';
  detail.innerHTML=`<div class="notice" style="margin-bottom:6px">記録状況：出勤 ${worked}日 / 退勤済み ${completed}日 / 未退勤 ${incomplete}日</div>${details}`;
 }
 
 function render(){
  const now=new Date();document.getElementById("clock").textContent=`${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;document.getElementById("today").textContent=now.toLocaleDateString("ja-JP",{year:"numeric",month:"long",day:"numeric",weekday:"long"});
- const name=currentUser();if(!name)return;const records=loadRecords(name),today=records.find(r=>r.date===todayKey()),breaks=getBreaks(today);
- document.getElementById("inTime").textContent=today?.in||"--:--";document.getElementById("breakCount").textContent=`${breaks.length}回`;document.getElementById("breakTime").textContent=formatMinutes(breakTotal(today));document.getElementById("outTime").textContent=today?.out||"--:--";
- let work="--";if(today?.in&&today?.out)work=formatMinutes(Math.max(0,diffMinutes(toMinutes(today.in),toMinutes(today.out))-breakTotal(today)));document.getElementById("workTime").textContent=work;
- const details=document.getElementById("breakDetails");details.innerHTML="";if(breaks.length){const title=document.createElement("div");title.className="label";title.style.marginTop="12px";title.textContent="休憩の内訳";const list=document.createElement("ul");list.className="break-list";breaks.forEach((b,i)=>{const li=document.createElement("li");li.className="row";const mins=b.start&&b.end?diffMinutes(toMinutes(b.start),toMinutes(b.end)):0;li.innerHTML=`<span class="label">休憩${i+1}</span><span class="value">${b.start||"--:--"}〜${b.end||"--:--"}${b.end?`（${formatMinutes(mins)}）`:"（休憩中）"}</span>`;list.appendChild(li)});details.append(title,list)}
- const inBtn=document.getElementById("inBtn"),outBtn=document.getElementById("outBtn"),breakBtn=document.getElementById("breakBtn");inBtn.disabled=!!today?.in;outBtn.disabled=!today?.in||!!today?.out||activeBreak(today);breakBtn.disabled=!today?.in||!!today?.out;breakBtn.textContent=activeBreak(today)?"休憩終了":"休憩開始";
- let status="本日は未出勤です";if(today?.in&&!today?.out&&activeBreak(today))status=`休憩中です（${breaks.length}回目）`;else if(today?.in&&!today?.out)status="勤務中です";else if(today?.out)status="本日の勤務は終了しています";document.getElementById("status").textContent=status;
- const adminHistorySel=document.getElementById("adminHistoryUserSelect");
- if(adminHistorySel)renderHistoryFor(adminHistorySel.value||name);
+ const name=currentUser();if(!name)return;const records=loadRecords(name),today=records.find(r=>r.date===todayKey()),breaks=getBreaks(today),sessions=getSessions(today),working=activeSession(today);
+ document.getElementById("inTime").textContent=firstIn(today)||"--:--";document.getElementById("breakCount").textContent=`${breaks.length}回`;document.getElementById("breakTime").textContent=formatMinutes(breakTotal(today));document.getElementById("outTime").textContent=working?"--:--":(lastOut(today)||"--:--");
+ let work="--";if(sessions.length)work=formatMinutes(workTotal(today,true));document.getElementById("workTime").textContent=work;
+ const details=document.getElementById("breakDetails");details.innerHTML="";if(breaks.length){const title=document.createElement("div");title.className="label";title.style.marginTop="12px";title.textContent="休憩の内訳";const list=document.createElement("ul");list.className="break-list";breaks.forEach((b,i)=>{const li=document.createElement("li");li.className="row";const mins=b.start&&b.end?diffMinutes(toMinutes(b.start),toMinutes(b.end)):0;li.innerHTML=`<span class="label">休憩${i+1}</span><span class="value">${b.start||"--:--"}〜${b.end||"--:--"}${b.end?`（${formatMinutes(mins)}）`:`（休憩中）`}</span>`;list.appendChild(li)});details.append(title,list)}
+ const inBtn=document.getElementById("inBtn"),outBtn=document.getElementById("outBtn"),breakBtn=document.getElementById("breakBtn");inBtn.disabled=working;outBtn.disabled=!working||activeBreak(today);breakBtn.disabled=!working;breakBtn.textContent=activeBreak(today)?"休憩終了":"休憩開始";
+ let status="本日は未出勤です";if(working&&activeBreak(today))status=`休憩中です（${breaks.length}回目）`;else if(working)status="勤務中です";else if(sessions.length)status="勤務終了・再出勤できます";document.getElementById("status").textContent=status;
+ const adminHistorySel=document.getElementById("adminHistoryUserSelect");if(adminHistorySel)renderHistoryFor(adminHistorySel.value||name);
 }
-function punch(type){const name=currentUser();if(!name)return;const records=loadRecords(name),key=todayKey(),time=fmtTime(new Date());let r=records.find(x=>x.date===key);if(!r){r={date:key,breaks:[]};records.push(r)}if(!Array.isArray(r.breaks))r.breaks=[];if(type==="in"&&!r.in)r.in=time;if(type==="out"&&r.in&&!r.out&&!activeBreak(r))r.out=time;saveRecords(name,records);render()}
-function toggleBreak(){const name=currentUser();if(!name)return;const records=loadRecords(name),key=todayKey(),time=fmtTime(new Date());const r=records.find(x=>x.date===key);if(!r||!r.in||r.out)return;if(!Array.isArray(r.breaks))r.breaks=[];if(activeBreak(r))r.breaks[r.breaks.length-1].end=time;else r.breaks.push({start:time,end:null});saveRecords(name,records);render()}
+function punch(type){
+ const name=currentUser();if(!name)return;const records=loadRecords(name),key=todayKey(),time=fmtTime(new Date());let r=records.find(x=>x.date===key);
+ if(!r){r={date:key,breaks:[],sessions:[]};records.push(r)}
+ if(!Array.isArray(r.breaks))r.breaks=[];if(!Array.isArray(r.sessions))r.sessions=getSessions(r);
+ if(type==="in"){
+   if(activeSession(r)){alert("すでに出勤しています。");return;}
+   r.sessions.push({in:time,out:null});r.in=r.in||time;r.out="";
+ }else if(type==="out"){
+   if(!activeSession(r)){alert("先に出勤してください。");return;}
+   if(activeBreak(r)){alert("先に休憩を終了してください。");return;}
+   r.sessions[r.sessions.length-1].out=time;r.out=time;
+ }
+ saveRecords(name,records);render()
+}
+function toggleBreak(){const name=currentUser();if(!name)return;const records=loadRecords(name),key=todayKey(),time=fmtTime(new Date());const r=records.find(x=>x.date===key);if(!r||!activeSession(r))return;if(!Array.isArray(r.breaks))r.breaks=[];if(activeBreak(r))r.breaks[r.breaks.length-1].end=time;else r.breaks.push({start:time,end:null});saveRecords(name,records);render()}
 
 function on(id,event,fn){const el=document.getElementById(id);if(el)el.addEventListener(event,fn)}
 on("addUserBtn","click",addUser);on("calendarUserSelect","change",()=>{calendarSelectedDate="";renderCalendar()});on("calendarPrevBtn","click",()=>moveCalendarMonth(-1));on("calendarNextBtn","click",()=>moveCalendarMonth(1));on("adminHistoryUserSelect","change",()=>renderHistoryFor(document.getElementById("adminHistoryUserSelect").value));on("monthlyUserSelect","change",renderMonthlySummary);on("monthlyMonthSelect","change",renderMonthlySummary);on("editUserSelect","change",populateEditDates);on("editDateSelect","change",loadEditRecord);on("addBreakEditBtn","click",addEditBreak);on("saveAttendanceEditBtn","click",saveAttendanceEdit);on("adminBtn","click",openAdmin);on("closeAdminBtn","click",closeAdmin);on("changeAdminPasswordBtn","click",changeAdminPassword);on("nameInput","keydown",e=>{if(e.key==="Enter")addUser()});on("switchUserBtn","click",switchUser);on("inBtn","click",()=>punch("in"));on("outBtn","click",()=>punch("out"));on("breakBtn","click",toggleBreak);
