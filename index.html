@@ -119,7 +119,21 @@ function setCurrentUser(n){localStorage.setItem(CURRENT_KEY,n)}
 function userKey(name){return "attendance_records_user_"+encodeURIComponent(name)}
 function loadRecords(name){if(!name)return[];try{return JSON.parse(localStorage.getItem(userKey(name))||"[]")}catch(e){return[]}}
 function saveRecords(name,a){localStorage.setItem(userKey(name),JSON.stringify(a))}
-function migrateOldData(name){if(!name||localStorage.getItem(userKey(name)))return;try{const old=JSON.parse(localStorage.getItem(OLD_KEY)||"[]");if(old.length)saveRecords(name,old)}catch(e){}}
+function migrateOldData(name){
+ if(!name||localStorage.getItem(userKey(name)))return;
+ // 旧バージョンの共通データは、複数利用者がいる場合は絶対に他人へコピーしない。
+ // 利用者が1人だけの初回移行時だけ、その利用者へ引き継いでから共通データを削除する。
+ try{
+   const us=users();
+   const old=JSON.parse(localStorage.getItem(OLD_KEY)||"[]");
+   if(us.length===1 && old.length){
+     saveRecords(name,old);
+     localStorage.removeItem(OLD_KEY);
+   }else if(us.length>1){
+     localStorage.removeItem(OLD_KEY);
+   }
+ }catch(e){}
+}
 function toMinutes(t){if(!t)return null;const [h,m]=t.split(":").map(Number);return h*60+m}
 function diffMinutes(s,e){if(s==null||e==null)return 0;let d=e-s;if(d<0)d+=1440;return d}
 function formatMinutes(m){return `${Math.floor(m/60)}時間${m%60}分`}
@@ -150,7 +164,7 @@ function renderUsers(){
  const title=document.createElement("p");title.className="notice";title.textContent="登録済みの名前から選択";setup.appendChild(title);const box=document.createElement("div");box.className="user-list";setup.appendChild(box);add(box,false);
 }
 function showApp(){const name=currentUser();const setup=document.getElementById("userSetup"),app=document.getElementById("app");setup.classList.remove("screen-hidden");app.classList.remove("screen-hidden");setup.classList.toggle("hidden",!!name);app.classList.toggle("hidden",!name);document.getElementById("currentUser").textContent=name;renderUsers();render()}
-function selectUser(name){setCurrentUser(name);migrateOldData(name);showApp()}
+function selectUser(name){setCurrentUser(name);showApp()}
 function addUser(){const input=document.getElementById("nameInput"),name=input.value.trim();if(!name){alert("名前を入力してください");return}const us=users();if(!us.includes(name)){us.push(name);saveUsers(us)}setCurrentUser(name);input.value="";showApp()}
 function renameUser(name){
  const next=prompt(`「${name}」さんの新しい名前を入力してください。`,name);
@@ -352,6 +366,8 @@ function toggleBreak(){const name=currentUser();if(!name)return;const records=lo
 
 function on(id,event,fn){const el=document.getElementById(id);if(el)el.addEventListener(event,fn)}
 on("addUserBtn","click",addUser);on("calendarUserSelect","change",()=>{calendarSelectedDate="";renderCalendar()});on("calendarPrevBtn","click",()=>moveCalendarMonth(-1));on("calendarNextBtn","click",()=>moveCalendarMonth(1));on("adminHistoryUserSelect","change",()=>renderHistoryFor(document.getElementById("adminHistoryUserSelect").value));on("monthlyUserSelect","change",renderMonthlySummary);on("monthlyMonthSelect","change",renderMonthlySummary);on("editUserSelect","change",populateEditDates);on("editDateSelect","change",loadEditRecord);on("addBreakEditBtn","click",addEditBreak);on("saveAttendanceEditBtn","click",saveAttendanceEdit);on("adminBtn","click",openAdmin);on("closeAdminBtn","click",closeAdmin);on("changeAdminPasswordBtn","click",changeAdminPassword);on("nameInput","keydown",e=>{if(e.key==="Enter")addUser()});on("switchUserBtn","click",switchUser);on("inBtn","click",()=>punch("in"));on("outBtn","click",()=>punch("out"));on("breakBtn","click",toggleBreak);
+// 旧バージョンの共通勤怠データが残っていても、複数利用者へ混ざらないようにする。
+try{if(users().length>1)localStorage.removeItem(OLD_KEY);}catch(e){}
 renderUsers();showApp();setInterval(render,1000);
 if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js").catch(console.error))}
 </script>
