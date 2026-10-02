@@ -124,6 +124,7 @@ function toMinutes(t){if(!t)return null;const [h,m]=t.split(":").map(Number);ret
 function diffMinutes(s,e){if(s==null||e==null)return 0;let d=e-s;if(d<0)d+=1440;return d}
 function formatMinutes(m){return `${Math.floor(m/60)}時間${m%60}分`}
 function getBreaks(r){return Array.isArray(r?.breaks)?r.breaks:[]}
+function breakTotal(r){return getBreaks(r).reduce((sum,b)=>{if(!b?.start||!b?.end)return sum;return sum+diffMinutes(toMinutes(b.start),toMinutes(b.end))},0)}
 function getSessions(r){
  if(Array.isArray(r?.sessions))return r.sessions;
  if(r?.in)return [{in:r.in,out:r.out||null}];
