@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>勤怠管理システム</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif;background:#f2f4f7;color:#222}
+header{background:#2563eb;color:#fff;padding:20px;text-align:center}header h1{margin:0;font-size:22px}
+.container{max-width:600px;margin:auto;padding:16px}.clock-card,.history{background:#fff;border-radius:16px;padding:20px;margin-bottom:16px;box-shadow:0 3px 12px rgba(0,0,0,.08)}
+.clock-card{text-align:center}#clock{font-size:40px;font-weight:bold}#date{margin-top:5px;color:#666}.status{margin-top:15px;font-weight:bold}
+.buttons{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}button{border:0;border-radius:14px;padding:18px 10px;font-size:17px;font-weight:bold;color:#fff;cursor:pointer;touch-action:manipulation}button:active{transform:scale(.97)}
+.attendance{background:#16a34a}.leave{background:#dc2626}.break-start{background:#f59e0b}.break-end{background:#0891b2}.clear{background:#6b7280;width:100%}
+.history h2{margin-top:0;font-size:20px}.record{border-bottom:1px solid #ddd;padding:14px 0}.record:last-child{border-bottom:0}
+.record-date{font-weight:bold;margin-bottom:8px}.record-row{display:flex;justify-content:space-between;margin:5px 0;color:#555}.work-time{color:#2563eb;font-weight:bold}.empty{text-align:center;color:#888;padding:20px}
+@media(max-width:400px){#clock{font-size:34px}button{font-size:15px;padding:16px 8px}}
+</style>
+</head>
+<body>
+<header><h1>勤怠管理システム</h1></header>
+<div class="container">
+<div class="clock-card">
+<div id="clock">00:00:00</div><div id="date"></div><div class="status" id="status">未出勤</div>
+</div>
+<div class="buttons">
+<button class="attendance" onclick="startWork()">🟢 出勤</button>
+<button class="leave" onclick="endWork()">🔴 退勤</button>
+<button class="break-start" onclick="startBreak()">☕ 休憩開始</button>
+<button class="break-end" onclick="endBreak()">▶️ 休憩終了</button>
+</div>
+<div class="history">
+<h2>📅 勤怠履歴</h2><div id="history"></div><br>
+<button class="clear" onclick="clearHistory()">履歴をすべて削除</button>
+</div>
+</div>
+<script>
+let attendanceData=JSON.parse(localStorage.getItem("attendanceData"))||[];
+let currentDay=localStorage.getItem("currentDay")||"";
+let currentRecord=null;
+function updateClock(){const now=new Date();document.getElementById("clock").textContent=now.toLocaleTimeString("ja-JP",{hour:"2-digit",minute:"2-digit",second:"2-digit"});document.getElementById("date").textContent=now.toLocaleDateString("ja-JP",{year:"numeric",month:"long",day:"numeric",weekday:"long"});checkCurrentDay()}
+setInterval(updateClock,1000);updateClock();
+function getToday(){const n=new Date();return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,"0")}-${String(n.getDate()).padStart(2,"0")}`}
+function checkCurrentDay(){const t=getToday();if(currentDay!==t){currentDay=t;localStorage.setItem("currentDay",currentDay);currentRecord=null}}
+function getTime(){return new Date().toLocaleTimeString("ja-JP",{hour:"2-digit",minute:"2-digit"})}
+function startWork(){checkCurrentDay();if(currentRecord){alert("すでに出勤しています。");return}currentRecord={date:currentDay,start:getTime(),end:"",breakStart:"",breakEnd:"",workTime:""};document.getElementById("status").textContent="🟢 勤務中";alert("出勤しました！")}
+function endWork(){if(!currentRecord){alert("先に出勤してください。");return}if(currentRecord.end){alert("すでに退勤しています。");return}currentRecord.end=getTime();currentRecord.workTime=calculateWorkTime(currentRecord.start,currentRecord.end,currentRecord.breakStart,currentRecord.breakEnd);attendanceData.unshift(currentRecord);localStorage.setItem("attendanceData",JSON.stringify(attendanceData));currentRecord=null;document.getElementById("status").textContent="🔵 退勤済み";displayHistory();alert("退勤しました！")}
+function startBreak(){if(!currentRecord){alert("先に出勤してください。");return}if(currentRecord.breakStart){alert("すでに休憩中です。");return}currentRecord.breakStart=getTime();document.getElementById("status").textContent="☕ 休憩中";alert("休憩を開始しました。")}
+function endBreak(){if(!currentRecord){alert("現在勤務中ではありません。");return}if(!currentRecord.breakStart){alert("休憩を開始していません。");return}if(currentRecord.breakEnd){alert("すでに休憩終了しています。");return}currentRecord.breakEnd=getTime();document.getElementById("status").textContent="🟢 勤務中";alert("休憩を終了しました。")}
+function timeToMinutes(t){const p=t.split(":");return Number(p[0])*60+Number(p[1])}
+function calculateWorkTime(s,e,bs,be){let total=timeToMinutes(e)-timeToMinutes(s);if(total<0)total+=1440;if(bs&&be){let b=timeToMinutes(be)-timeToMinutes(bs);if(b<0)b+=1440;total-=b}return `${Math.floor(total/60)}時間${total%60}分`}
+function displayHistory(){const h=document.getElementById("history");if(!attendanceData.length){h.innerHTML='<div class="empty">勤怠記録はありません</div>';return}h.innerHTML=attendanceData.map(r=>`<div class="record"><div class="record-date">📅 ${r.date}</div><div class="record-row"><span>出勤</span><span>${r.start}</span></div><div class="record-row"><span>退勤</span><span>${r.end}</span></div><div class="record-row"><span>休憩</span><span>${r.breakStart?r.breakStart+" ～ "+(r.breakEnd||"休憩中"):"なし"}</span></div><div class="record-row work-time"><span>勤務時間</span><span>${r.workTime}</span></div></div>`).join("")}
+function clearHistory(){if(!confirm("勤怠履歴をすべて削除しますか？"))return;attendanceData=[];localStorage.removeItem("attendanceData");displayHistory()}
+displayHistory();
+</script>
+</body>
+</html>
