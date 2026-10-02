@@ -1,192 +1,96 @@
 <!doctype html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#2563eb">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="勤怠管理">
-  <link rel="manifest" href="manifest.json">
-  <title>勤怠管理</title>
-  <style>
-    *{box-sizing:border-box} body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f3f6fb;color:#172033}
-    .wrap{max-width:520px;margin:auto;padding:20px 16px 40px}.header{padding:10px 4px 18px}
-    h1{margin:0;font-size:28px}.date{margin-top:6px;color:#667085}
-    .card{background:#fff;border-radius:20px;padding:20px;margin:14px 0;box-shadow:0 6px 22px #0000000d}
-    .clock{text-align:center;font-size:48px;font-weight:700;letter-spacing:1px}.status{text-align:center;margin:6px 0 18px;color:#667085}
-    .buttons{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-    button{border:0;border-radius:14px;padding:17px 10px;font-size:18px;font-weight:700;color:white;cursor:pointer}
-    button:active{transform:scale(.98)} #inBtn{background:#16a34a} #outBtn{background:#dc2626}
-    #breakBtn{grid-column:1/-1;background:#f59e0b}
-    #inBtn:disabled,#outBtn:disabled,#breakBtn:disabled{opacity:.35;cursor:not-allowed}
-    .row{display:flex;justify-content:space-between;gap:16px;padding:12px 0;border-bottom:1px solid #eef1f5}.row:last-child{border-bottom:0}
-    .label{color:#667085}.value{font-weight:700;text-align:right}.empty{text-align:center;color:#98a2b3;padding:10px}
-    .history{max-height:420px;overflow:auto}.entry{padding:12px 0;border-bottom:1px solid #eef1f5}
-    .entry strong{display:block;margin-bottom:5px}.small{font-size:14px;color:#667085;line-height:1.7}
-    .break-list{margin-top:4px;padding-left:0;list-style:none}.break-list li{margin:2px 0}
-    .danger{background:#eef2f7;color:#344054;font-size:14px;padding:10px 14px;margin-top:12px;width:100%}
-    .notice{font-size:13px;color:#667085;line-height:1.5}
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#2563eb">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="勤怠管理">
+<link rel="manifest" href="manifest.json">
+<title>勤怠管理</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f3f6fb;color:#172033}.wrap{max-width:560px;margin:auto;padding:20px 16px 40px}.header{padding:10px 4px 18px}h1{margin:0;font-size:28px}.date{margin-top:6px;color:#667085}.card{background:#fff;border-radius:20px;padding:20px;margin:14px 0;box-shadow:0 6px 22px #0000000d}.clock{text-align:center;font-size:48px;font-weight:700;letter-spacing:1px}.status{text-align:center;margin:6px 0 18px;color:#667085}.buttons{display:grid;grid-template-columns:1fr 1fr;gap:12px}button{border:0;border-radius:14px;padding:17px 10px;font-size:18px;font-weight:700;color:white;cursor:pointer}button:active{transform:scale(.98)}#inBtn{background:#16a34a}#outBtn{background:#dc2626}#breakBtn{grid-column:1/-1;background:#f59e0b}button:disabled{opacity:.35;cursor:not-allowed}.row{display:flex;justify-content:space-between;gap:16px;padding:12px 0;border-bottom:1px solid #eef1f5}.row:last-child{border-bottom:0}.label{color:#667085}.value{font-weight:700;text-align:right}.empty{text-align:center;color:#98a2b3;padding:10px}.history{max-height:460px;overflow:auto}.entry{padding:12px 0;border-bottom:1px solid #eef1f5}.entry strong{display:block;margin-bottom:5px}.small{font-size:14px;color:#667085;line-height:1.7}.break-list{margin-top:4px;padding-left:0;list-style:none}.break-list li{margin:2px 0}.danger{background:#eef2f7;color:#344054;font-size:14px;padding:10px 14px;margin-top:12px;width:100%}.primary{background:#2563eb;width:100%;margin-top:10px}.secondary{background:#eef2f7;color:#344054;width:100%;font-size:15px}.input{width:100%;padding:14px;border:1px solid #d0d5dd;border-radius:12px;font-size:17px;margin-top:8px}.user-name{font-size:18px;font-weight:700}.notice{font-size:13px;color:#667085;line-height:1.5}.hidden{display:none!important}.user-list{display:grid;gap:8px;margin-top:12px}.user-item{display:flex;gap:8px;align-items:center}.user-item button{flex:1;background:#eef2f7;color:#172033;font-size:16px;padding:12px;text-align:left}.delete-user{flex:0 0 auto!important;width:48px!important;text-align:center!important;background:#fee2e2!important;color:#b91c1c!important}.tag{display:inline-block;background:#e8f0ff;color:#2563eb;border-radius:999px;padding:4px 9px;font-size:12px;margin-left:6px}
+</style>
 </head>
 <body>
 <div class="wrap">
-  <header class="header">
-    <h1>勤怠管理</h1>
-    <div class="date" id="today"></div>
-  </header>
+<header class="header"><h1>勤怠管理</h1><div class="date" id="today"></div></header>
 
-  <section class="card">
-    <div class="clock" id="clock">--:--:--</div>
-    <div class="status" id="status">読み込み中…</div>
-    <div class="buttons">
-      <button id="inBtn" type="button">出勤</button>
-      <button id="outBtn" type="button">退勤</button>
-      <button id="breakBtn" type="button">休憩開始</button>
-    </div>
-  </section>
+<section class="card" id="userSetup">
+  <h2>利用者登録</h2>
+  <p class="notice">使う人の名前を登録してください。同じ端末で複数人が使う場合、それぞれの勤怠を分けて管理できます。</p>
+  <input class="input" id="nameInput" maxlength="30" placeholder="例：山田 太郎" autocomplete="name">
+  <button class="primary" id="addUserBtn" type="button">この名前で開始</button>
+  <div id="existingUsers"></div>
+</section>
 
-  <section class="card">
-    <h2>今日の記録</h2>
-    <div class="row"><span class="label">出勤時刻</span><span class="value" id="inTime">--:--</span></div>
-    <div class="row"><span class="label">休憩回数</span><span class="value" id="breakCount">0回</span></div>
-    <div class="row"><span class="label">休憩時間</span><span class="value" id="breakTime">0時間0分</span></div>
-    <div class="row"><span class="label">退勤時刻</span><span class="value" id="outTime">--:--</span></div>
-    <div class="row"><span class="label">実働時間</span><span class="value" id="workTime">--</span></div>
-    <div id="breakDetails"></div>
-  </section>
+<div id="app" class="hidden">
+<section class="card">
+  <div class="user-name">現在の利用者：<span id="currentUser"></span><span class="tag">個人管理</span></div>
+  <button class="secondary" id="switchUserBtn" type="button">利用者を切り替える</button>
+</section>
 
-  <section class="card">
-    <h2>履歴</h2>
-    <div class="history" id="history"></div>
-    <button class="danger" id="clearBtn" type="button">履歴をすべて削除</button>
-  </section>
+<section class="card"><div class="clock" id="clock">--:--:--</div><div class="status" id="status">読み込み中…</div><div class="buttons"><button id="inBtn" type="button">出勤</button><button id="outBtn" type="button">退勤</button><button id="breakBtn" type="button">休憩開始</button></div></section>
 
-  <p class="notice">※ 休憩は何回でも記録できます。休憩中に「休憩終了」を押すと、次の休憩を開始できるようになります。データはこの端末のブラウザ内に保存されます。</p>
+<section class="card"><h2>今日の記録</h2><div class="row"><span class="label">出勤時刻</span><span class="value" id="inTime">--:--</span></div><div class="row"><span class="label">休憩回数</span><span class="value" id="breakCount">0回</span></div><div class="row"><span class="label">休憩時間</span><span class="value" id="breakTime">0時間0分</span></div><div class="row"><span class="label">退勤時刻</span><span class="value" id="outTime">--:--</span></div><div class="row"><span class="label">実働時間</span><span class="value" id="workTime">--</span></div><div id="breakDetails"></div></section>
+
+<section class="card"><h2>この人の履歴</h2><div class="history" id="history"></div><button class="danger" id="clearBtn" type="button">この人の履歴をすべて削除</button></section>
+
+<section class="card"><h2>利用者管理</h2><div class="notice">登録した名前ごとに勤怠データが分かれて保存されます。</div><div class="user-list" id="userList"></div></section>
 </div>
 
+<p class="notice">※ データはこの端末のブラウザ内に保存されます。別のスマホやPCとは自動同期されません。複数人で同じ端末を使う場合は、利用者を切り替えてください。</p>
+</div>
 <script>
-const KEY = "attendance_records_v2";
-const pad = n => String(n).padStart(2,"0");
-const fmtTime = d => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
-const fmtDate = d => `${d.getFullYear()}/${pad(d.getMonth()+1)}/${pad(d.getDate())}`;
-
-function load(){
-  try{
-    const records=JSON.parse(localStorage.getItem(KEY)||"[]");
-    return records.map(r=>{
-      if(!Array.isArray(r.breaks)){
-        const breaks=[];
-        if(r.breakStart) breaks.push({start:r.breakStart,end:r.breakEnd||null});
-        return {...r,breaks};
-      }
-      return r;
-    });
-  }catch(e){return []}
-}
-function save(a){localStorage.setItem(KEY,JSON.stringify(a))}
-function todayKey(){return fmtDate(new Date())}
-function toMinutes(t){ if(!t)return null; const [h,m]=t.split(":").map(Number); return h*60+m; }
-function diffMinutes(start,end){ if(start==null||end==null)return 0; let d=end-start; if(d<0)d+=1440; return d; }
-function formatMinutes(mins){ return `${Math.floor(mins/60)}時間${mins%60}分`; }
+const USERS_KEY="attendance_users_v1", CURRENT_KEY="attendance_current_user_v1", OLD_KEY="attendance_records_v2";
+const pad=n=>String(n).padStart(2,"0"), fmtTime=d=>`${pad(d.getHours())}:${pad(d.getMinutes())}`, fmtDate=d=>`${d.getFullYear()}/${pad(d.getMonth()+1)}/${pad(d.getDate())}`;
+function users(){try{return JSON.parse(localStorage.getItem(USERS_KEY)||"[]")}catch(e){return[]}}
+function saveUsers(a){localStorage.setItem(USERS_KEY,JSON.stringify(a))}
+function currentUser(){return localStorage.getItem(CURRENT_KEY)||""}
+function setCurrentUser(n){localStorage.setItem(CURRENT_KEY,n)}
+function userKey(name){return "attendance_records_user_"+encodeURIComponent(name)}
+function loadRecords(name){if(!name)return[];try{return JSON.parse(localStorage.getItem(userKey(name))||"[]")}catch(e){return[]}}
+function saveRecords(name,a){localStorage.setItem(userKey(name),JSON.stringify(a))}
+function migrateOldData(name){if(!name||localStorage.getItem(userKey(name)))return;try{const old=JSON.parse(localStorage.getItem(OLD_KEY)||"[]");if(old.length)saveRecords(name,old)}catch(e){}}
+function toMinutes(t){if(!t)return null;const [h,m]=t.split(":").map(Number);return h*60+m}
+function diffMinutes(s,e){if(s==null||e==null)return 0;let d=e-s;if(d<0)d+=1440;return d}
+function formatMinutes(m){return `${Math.floor(m/60)}時間${m%60}分`}
 function getBreaks(r){return Array.isArray(r?.breaks)?r.breaks:[]}
 function breakTotal(r){return getBreaks(r).reduce((sum,b)=>sum+(b.start&&b.end?diffMinutes(toMinutes(b.start),toMinutes(b.end)):0),0)}
-function activeBreak(r){const bs=getBreaks(r);return bs.length>0 && bs[bs.length-1].start && !bs[bs.length-1].end}
-function breakSummary(r){
-  return getBreaks(r).map((b,i)=>`休憩${i+1} ${b.start||"--:--"}〜${b.end||"--:--"}`).join("　");
+function activeBreak(r){const b=getBreaks(r);return b.length>0&&b[b.length-1].start&&!b[b.length-1].end}
+function todayKey(){return fmtDate(new Date())}
+
+function renderUsers(){
+ const list=document.getElementById("userList"), setup=document.getElementById("existingUsers");
+ const us=users(); list.innerHTML=""; setup.innerHTML="";
+ if(!us.length)return;
+ const add=(parent,showDelete)=>{us.forEach(name=>{const row=document.createElement("div");row.className="user-item";const b=document.createElement("button");b.type="button";b.textContent=name;b.onclick=()=>selectUser(name);row.appendChild(b);if(showDelete){const d=document.createElement("button");d.type="button";d.className="delete-user";d.textContent="削除";d.onclick=()=>deleteUser(name);row.appendChild(d)}parent.appendChild(row)})};
+ add(list,true);
+ const title=document.createElement("p");title.className="notice";title.textContent="登録済みの名前から選択";setup.appendChild(title);const box=document.createElement("div");box.className="user-list";setup.appendChild(box);add(box,false);
 }
+function showApp(){const name=currentUser();document.getElementById("userSetup").classList.toggle("hidden",!!name);document.getElementById("app").classList.toggle("hidden",!name);document.getElementById("currentUser").textContent=name;renderUsers();render()}
+function selectUser(name){setCurrentUser(name);migrateOldData(name);showApp()}
+function addUser(){const input=document.getElementById("nameInput"),name=input.value.trim();if(!name){alert("名前を入力してください");return}const us=users();if(!us.includes(name)){us.push(name);saveUsers(us)}setCurrentUser(name);input.value="";showApp()}
+function deleteUser(name){if(!confirm(`${name}さんの登録と勤怠データを削除しますか？`))return;saveUsers(users().filter(x=>x!==name));localStorage.removeItem(userKey(name));if(currentUser()===name){localStorage.removeItem(CURRENT_KEY);document.getElementById("userSetup").classList.remove("hidden");document.getElementById("app").classList.add("hidden")}renderUsers();render()}
+function switchUser(){document.getElementById("app").classList.add("hidden");document.getElementById("userSetup").classList.remove("hidden");renderUsers()}
 
 function render(){
-  const now = new Date();
-  document.getElementById("clock").textContent = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-  document.getElementById("today").textContent = now.toLocaleDateString("ja-JP",{year:"numeric",month:"long",day:"numeric",weekday:"long"});
-
-  const records = load();
-  const today = records.find(r=>r.date===todayKey());
-  const inBtn=document.getElementById("inBtn"), outBtn=document.getElementById("outBtn"), breakBtn=document.getElementById("breakBtn");
-  const breaks=getBreaks(today);
-
-  document.getElementById("inTime").textContent = today?.in || "--:--";
-  document.getElementById("breakCount").textContent = `${breaks.length}回`;
-  document.getElementById("breakTime").textContent = formatMinutes(breakTotal(today));
-  document.getElementById("outTime").textContent = today?.out || "--:--";
-
-  let work="--";
-  if(today?.in && today?.out){
-    const total = diffMinutes(toMinutes(today.in),toMinutes(today.out));
-    work = formatMinutes(Math.max(0,total-breakTotal(today)));
-  }
-  document.getElementById("workTime").textContent=work;
-
-  const details=document.getElementById("breakDetails");
-  details.innerHTML="";
-  if(breaks.length){
-    const title=document.createElement("div"); title.className="label"; title.style.marginTop="12px"; title.textContent="休憩の内訳";
-    const list=document.createElement("ul"); list.className="break-list";
-    breaks.forEach((b,i)=>{
-      const li=document.createElement("li"); li.className="row";
-      const mins=b.start&&b.end?diffMinutes(toMinutes(b.start),toMinutes(b.end)):0;
-      li.innerHTML=`<span class="label">休憩${i+1}</span><span class="value">${b.start||"--:--"}〜${b.end||"--:--"}${b.end?`（${formatMinutes(mins)}）`:"（休憩中）"}</span>`;
-      list.appendChild(li);
-    });
-    details.append(title,list);
-  }
-
-  inBtn.disabled=!!today?.in;
-  outBtn.disabled=!today?.in || !!today?.out || activeBreak(today);
-  breakBtn.disabled=!today?.in || !!today?.out;
-  breakBtn.textContent = activeBreak(today) ? "休憩終了" : "休憩開始";
-
-  let status="本日は未出勤です";
-  if(today?.in && !today?.out && activeBreak(today)) status=`休憩中です（${breaks.length}回目）`;
-  else if(today?.in && !today?.out) status="勤務中です";
-  else if(today?.out) status="本日の勤務は終了しています";
-  document.getElementById("status").textContent=status;
-
-  const history=document.getElementById("history");
-  history.innerHTML="";
-  if(!records.length){history.innerHTML='<div class="empty">まだ記録がありません</div>';return}
-  [...records].reverse().forEach(r=>{
-    const rs=getBreaks(r);
-    const breakText=rs.length?`<br>${rs.map((b,i)=>`休憩${i+1} ${b.start||"--:--"}〜${b.end||"--:--"}`).join("　")}`:"";
-    const bm=`休憩合計 ${formatMinutes(breakTotal(r))}`;
-    const el=document.createElement("div"); el.className="entry";
-    el.innerHTML=`<strong>${r.date}</strong><span class="small">出勤 ${r.in||"--:--"}<br>退勤 ${r.out||"--:--"}<br>${bm}${breakText}</span>`;
-    history.appendChild(el);
-  });
+ const now=new Date();document.getElementById("clock").textContent=`${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;document.getElementById("today").textContent=now.toLocaleDateString("ja-JP",{year:"numeric",month:"long",day:"numeric",weekday:"long"});
+ const name=currentUser();if(!name)return;const records=loadRecords(name),today=records.find(r=>r.date===todayKey()),breaks=getBreaks(today);
+ document.getElementById("inTime").textContent=today?.in||"--:--";document.getElementById("breakCount").textContent=`${breaks.length}回`;document.getElementById("breakTime").textContent=formatMinutes(breakTotal(today));document.getElementById("outTime").textContent=today?.out||"--:--";
+ let work="--";if(today?.in&&today?.out)work=formatMinutes(Math.max(0,diffMinutes(toMinutes(today.in),toMinutes(today.out))-breakTotal(today)));document.getElementById("workTime").textContent=work;
+ const details=document.getElementById("breakDetails");details.innerHTML="";if(breaks.length){const title=document.createElement("div");title.className="label";title.style.marginTop="12px";title.textContent="休憩の内訳";const list=document.createElement("ul");list.className="break-list";breaks.forEach((b,i)=>{const li=document.createElement("li");li.className="row";const mins=b.start&&b.end?diffMinutes(toMinutes(b.start),toMinutes(b.end)):0;li.innerHTML=`<span class="label">休憩${i+1}</span><span class="value">${b.start||"--:--"}〜${b.end||"--:--"}${b.end?`（${formatMinutes(mins)}）`:"（休憩中）"}</span>`;list.appendChild(li)});details.append(title,list)}
+ const inBtn=document.getElementById("inBtn"),outBtn=document.getElementById("outBtn"),breakBtn=document.getElementById("breakBtn");inBtn.disabled=!!today?.in;outBtn.disabled=!today?.in||!!today?.out||activeBreak(today);breakBtn.disabled=!today?.in||!!today?.out;breakBtn.textContent=activeBreak(today)?"休憩終了":"休憩開始";
+ let status="本日は未出勤です";if(today?.in&&!today?.out&&activeBreak(today))status=`休憩中です（${breaks.length}回目）`;else if(today?.in&&!today?.out)status="勤務中です";else if(today?.out)status="本日の勤務は終了しています";document.getElementById("status").textContent=status;
+ const history=document.getElementById("history");history.innerHTML="";if(!records.length){history.innerHTML='<div class="empty">まだ記録がありません</div>')}else{[...records].reverse().forEach(r=>{const rs=getBreaks(r),el=document.createElement("div");el.className="entry";const bt=rs.length?`<br>${rs.map((b,i)=>`休憩${i+1} ${b.start||"--:--"}〜${b.end||"--:--"}`).join("　")}`:"";el.innerHTML=`<strong>${r.date}</strong><span class="small">出勤 ${r.in||"--:--"}<br>退勤 ${r.out||"--:--"}<br>休憩合計 ${formatMinutes(breakTotal(r))}${bt}</span>`;history.appendChild(el)})}
 }
+function punch(type){const name=currentUser();if(!name)return;const records=loadRecords(name),key=todayKey(),time=fmtTime(new Date());let r=records.find(x=>x.date===key);if(!r){r={date:key,breaks:[]};records.push(r)}if(!Array.isArray(r.breaks))r.breaks=[];if(type==="in"&&!r.in)r.in=time;if(type==="out"&&r.in&&!r.out&&!activeBreak(r))r.out=time;saveRecords(name,records);render()}
+function toggleBreak(){const name=currentUser();if(!name)return;const records=loadRecords(name),key=todayKey(),time=fmtTime(new Date());const r=records.find(x=>x.date===key);if(!r||!r.in||r.out)return;if(!Array.isArray(r.breaks))r.breaks=[];if(activeBreak(r))r.breaks[r.breaks.length-1].end=time;else r.breaks.push({start:time,end:null});saveRecords(name,records);render()}
 
-function punch(type){
-  const records=load(), key=todayKey(), time=fmtTime(new Date());
-  let r=records.find(x=>x.date===key);
-  if(!r){r={date:key,breaks:[]};records.push(r)}
-  if(!Array.isArray(r.breaks))r.breaks=[];
-  if(type==="in" && !r.in) r.in=time;
-  if(type==="out" && r.in && !r.out && !activeBreak(r)) r.out=time;
-  save(records); render();
-}
-
-function toggleBreak(){
-  const records=load(), key=todayKey(), time=fmtTime(new Date());
-  let r=records.find(x=>x.date===key);
-  if(!r || !r.in || r.out) return;
-  if(!Array.isArray(r.breaks))r.breaks=[];
-  if(activeBreak(r)){
-    r.breaks[r.breaks.length-1].end=time;
-  }else{
-    r.breaks.push({start:time,end:null});
-  }
-  save(records); render();
-}
-
-document.getElementById("inBtn").addEventListener("click",()=>punch("in"));
-document.getElementById("outBtn").addEventListener("click",()=>punch("out"));
-document.getElementById("breakBtn").addEventListener("click",toggleBreak);
-document.getElementById("clearBtn").addEventListener("click",()=>{
-  if(confirm("履歴をすべて削除しますか？")){localStorage.removeItem(KEY);render();}
-});
-render(); setInterval(render,1000);
-if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js").catch(console.error));}
+document.getElementById("addUserBtn").addEventListener("click",addUser);document.getElementById("nameInput").addEventListener("keydown",e=>{if(e.key==="Enter")addUser()});document.getElementById("switchUserBtn").addEventListener("click",switchUser);document.getElementById("inBtn").addEventListener("click",()=>punch("in"));document.getElementById("outBtn").addEventListener("click",()=>punch("out"));document.getElementById("breakBtn").addEventListener("click",toggleBreak);document.getElementById("clearBtn").addEventListener("click",()=>{const name=currentUser();if(name&&confirm(`${name}さんの履歴をすべて削除しますか？`)){localStorage.removeItem(userKey(name));render()}});
+renderUsers();showApp();setInterval(render,1000);
+if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js").catch(console.error))}
 </script>
 </body>
 </html>
