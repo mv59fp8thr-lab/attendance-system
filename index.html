@@ -1,1 +1,122 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#2563eb">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="勤怠管理">
+  <link rel="manifest" href="manifest.json">
+  <title>勤怠管理</title>
+  <style>
+    *{box-sizing:border-box} body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f3f6fb;color:#172033}
+    .wrap{max-width:520px;margin:auto;padding:20px 16px 40px}.header{padding:10px 4px 18px}
+    h1{margin:0;font-size:28px}.date{margin-top:6px;color:#667085}
+    .card{background:#fff;border-radius:20px;padding:20px;margin:14px 0;box-shadow:0 6px 22px #0000000d}
+    .clock{text-align:center;font-size:48px;font-weight:700;letter-spacing:1px}.status{text-align:center;margin:6px 0 18px;color:#667085}
+    .buttons{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    button{border:0;border-radius:14px;padding:17px 10px;font-size:18px;font-weight:700;color:white;cursor:pointer}
+    button:active{transform:scale(.98)} #inBtn{background:#16a34a} #outBtn{background:#dc2626}
+    #inBtn:disabled,#outBtn:disabled{opacity:.35;cursor:not-allowed}
+    .row{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #eef1f5}.row:last-child{border-bottom:0}
+    .label{color:#667085}.value{font-weight:700}.empty{text-align:center;color:#98a2b3;padding:10px}
+    .history{max-height:360px;overflow:auto}.entry{padding:12px 0;border-bottom:1px solid #eef1f5}
+    .entry strong{display:block;margin-bottom:5px}.small{font-size:14px;color:#667085}
+    .danger{background:#eef2f7;color:#344054;font-size:14px;padding:10px 14px;margin-top:12px;width:100%}
+    .notice{font-size:13px;color:#667085;line-height:1.5}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <header class="header">
+    <h1>勤怠管理</h1>
+    <div class="date" id="today"></div>
+  </header>
 
+  <section class="card">
+    <div class="clock" id="clock">--:--:--</div>
+    <div class="status" id="status">読み込み中…</div>
+    <div class="buttons">
+      <button id="inBtn" type="button">出勤</button>
+      <button id="outBtn" type="button">退勤</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>今日の記録</h2>
+    <div class="row"><span class="label">出勤時刻</span><span class="value" id="inTime">--:--</span></div>
+    <div class="row"><span class="label">退勤時刻</span><span class="value" id="outTime">--:--</span></div>
+    <div class="row"><span class="label">勤務時間</span><span class="value" id="workTime">--</span></div>
+  </section>
+
+  <section class="card">
+    <h2>履歴</h2>
+    <div class="history" id="history"></div>
+    <button class="danger" id="clearBtn" type="button">履歴をすべて削除</button>
+  </section>
+
+  <p class="notice">※ データはこの端末のブラウザ内に保存されます。別の端末とは同期されません。</p>
+</div>
+
+<script>
+const KEY = "attendance_records_v1";
+const pad = n => String(n).padStart(2,"0");
+const fmtTime = d => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+const fmtDate = d => `${d.getFullYear()}/${pad(d.getMonth()+1)}/${pad(d.getDate())}`;
+
+function load(){ try{return JSON.parse(localStorage.getItem(KEY)||"[]")}catch(e){return []} }
+function save(a){localStorage.setItem(KEY,JSON.stringify(a))}
+function todayKey(){return fmtDate(new Date())}
+
+function render(){
+  const now = new Date();
+  document.getElementById("clock").textContent = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+  document.getElementById("today").textContent = now.toLocaleDateString("ja-JP",{year:"numeric",month:"long",day:"numeric",weekday:"long"});
+
+  const records = load();
+  const today = records.find(r=>r.date===todayKey());
+  document.getElementById("inTime").textContent = today?.in || "--:--";
+  document.getElementById("outTime").textContent = today?.out || "--:--";
+
+  let work="--";
+  if(today?.in && today?.out){
+    const [ih,im]=today.in.split(":").map(Number), [oh,om]=today.out.split(":").map(Number);
+    let mins=(oh*60+om)-(ih*60+im); if(mins<0) mins+=1440;
+    work=`${Math.floor(mins/60)}時間${mins%60}分`;
+  }
+  document.getElementById("workTime").textContent=work;
+
+  const inBtn=document.getElementById("inBtn"), outBtn=document.getElementById("outBtn");
+  inBtn.disabled=!!today?.in; outBtn.disabled=!today?.in || !!today?.out;
+  document.getElementById("status").textContent =
+    !today ? "本日は未出勤です" : today.in && !today.out ? "勤務中です" : "本日の勤務は終了しています";
+
+  const history=document.getElementById("history");
+  history.innerHTML="";
+  if(!records.length){history.innerHTML='<div class="empty">まだ記録がありません</div>';return}
+  [...records].reverse().forEach(r=>{
+    const el=document.createElement("div"); el.className="entry";
+    el.innerHTML=`<strong>${r.date}</strong><span class="small">出勤 ${r.in||"--:--"}　退勤 ${r.out||"--:--"}</span>`;
+    history.appendChild(el);
+  });
+}
+
+function punch(type){
+  const records=load(), key=todayKey(), time=fmtTime(new Date());
+  let r=records.find(x=>x.date===key);
+  if(!r){r={date:key};records.push(r)}
+  if(type==="in" && !r.in) r.in=time;
+  if(type==="out" && r.in && !r.out) r.out=time;
+  save(records); render();
+}
+document.getElementById("inBtn").addEventListener("click",()=>punch("in"));
+document.getElementById("outBtn").addEventListener("click",()=>punch("out"));
+document.getElementById("clearBtn").addEventListener("click",()=>{
+  if(confirm("履歴をすべて削除しますか？")){localStorage.removeItem(KEY);render();}
+});
+render(); setInterval(render,1000);
+if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js").catch(console.error));}
+</script>
+</body>
+</html>

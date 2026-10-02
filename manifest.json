@@ -1,0 +1,9 @@
+{
+  "name": "勤怠管理",
+  "short_name": "勤怠管理",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f3f6fb",
+  "theme_color": "#2563eb",
+  "lang": "ja"
+}
