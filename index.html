@@ -20,10 +20,11 @@
     button:active{transform:scale(.98)} #inBtn{background:#16a34a} #outBtn{background:#dc2626}
     #breakBtn{grid-column:1/-1;background:#f59e0b}
     #inBtn:disabled,#outBtn:disabled,#breakBtn:disabled{opacity:.35;cursor:not-allowed}
-    .row{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #eef1f5}.row:last-child{border-bottom:0}
-    .label{color:#667085}.value{font-weight:700}.empty{text-align:center;color:#98a2b3;padding:10px}
-    .history{max-height:360px;overflow:auto}.entry{padding:12px 0;border-bottom:1px solid #eef1f5}
-    .entry strong{display:block;margin-bottom:5px}.small{font-size:14px;color:#667085}
+    .row{display:flex;justify-content:space-between;gap:16px;padding:12px 0;border-bottom:1px solid #eef1f5}.row:last-child{border-bottom:0}
+    .label{color:#667085}.value{font-weight:700;text-align:right}.empty{text-align:center;color:#98a2b3;padding:10px}
+    .history{max-height:420px;overflow:auto}.entry{padding:12px 0;border-bottom:1px solid #eef1f5}
+    .entry strong{display:block;margin-bottom:5px}.small{font-size:14px;color:#667085;line-height:1.7}
+    .break-list{margin-top:4px;padding-left:0;list-style:none}.break-list li{margin:2px 0}
     .danger{background:#eef2f7;color:#344054;font-size:14px;padding:10px 14px;margin-top:12px;width:100%}
     .notice{font-size:13px;color:#667085;line-height:1.5}
   </style>
@@ -48,11 +49,11 @@
   <section class="card">
     <h2>今日の記録</h2>
     <div class="row"><span class="label">出勤時刻</span><span class="value" id="inTime">--:--</span></div>
-    <div class="row"><span class="label">休憩開始</span><span class="value" id="breakStartTime">--:--</span></div>
-    <div class="row"><span class="label">休憩終了</span><span class="value" id="breakEndTime">--:--</span></div>
+    <div class="row"><span class="label">休憩回数</span><span class="value" id="breakCount">0回</span></div>
     <div class="row"><span class="label">休憩時間</span><span class="value" id="breakTime">0時間0分</span></div>
     <div class="row"><span class="label">退勤時刻</span><span class="value" id="outTime">--:--</span></div>
     <div class="row"><span class="label">実働時間</span><span class="value" id="workTime">--</span></div>
+    <div id="breakDetails"></div>
   </section>
 
   <section class="card">
@@ -61,7 +62,7 @@
     <button class="danger" id="clearBtn" type="button">履歴をすべて削除</button>
   </section>
 
-  <p class="notice">※ データはこの端末のブラウザ内に保存されます。別の端末とは同期されません。</p>
+  <p class="notice">※ 休憩は何回でも記録できます。休憩中に「休憩終了」を押すと、次の休憩を開始できるようになります。データはこの端末のブラウザ内に保存されます。</p>
 </div>
 
 <script>
@@ -70,12 +71,30 @@ const pad = n => String(n).padStart(2,"0");
 const fmtTime = d => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 const fmtDate = d => `${d.getFullYear()}/${pad(d.getMonth()+1)}/${pad(d.getDate())}`;
 
-function load(){ try{return JSON.parse(localStorage.getItem(KEY)||"[]")}catch(e){return []} }
+function load(){
+  try{
+    const records=JSON.parse(localStorage.getItem(KEY)||"[]");
+    return records.map(r=>{
+      if(!Array.isArray(r.breaks)){
+        const breaks=[];
+        if(r.breakStart) breaks.push({start:r.breakStart,end:r.breakEnd||null});
+        return {...r,breaks};
+      }
+      return r;
+    });
+  }catch(e){return []}
+}
 function save(a){localStorage.setItem(KEY,JSON.stringify(a))}
 function todayKey(){return fmtDate(new Date())}
 function toMinutes(t){ if(!t)return null; const [h,m]=t.split(":").map(Number); return h*60+m; }
 function diffMinutes(start,end){ if(start==null||end==null)return 0; let d=end-start; if(d<0)d+=1440; return d; }
 function formatMinutes(mins){ return `${Math.floor(mins/60)}時間${mins%60}分`; }
+function getBreaks(r){return Array.isArray(r?.breaks)?r.breaks:[]}
+function breakTotal(r){return getBreaks(r).reduce((sum,b)=>sum+(b.start&&b.end?diffMinutes(toMinutes(b.start),toMinutes(b.end)):0),0)}
+function activeBreak(r){const bs=getBreaks(r);return bs.length>0 && bs[bs.length-1].start && !bs[bs.length-1].end}
+function breakSummary(r){
+  return getBreaks(r).map((b,i)=>`休憩${i+1} ${b.start||"--:--"}〜${b.end||"--:--"}`).join("　");
+}
 
 function render(){
   const now = new Date();
@@ -85,30 +104,41 @@ function render(){
   const records = load();
   const today = records.find(r=>r.date===todayKey());
   const inBtn=document.getElementById("inBtn"), outBtn=document.getElementById("outBtn"), breakBtn=document.getElementById("breakBtn");
+  const breaks=getBreaks(today);
 
   document.getElementById("inTime").textContent = today?.in || "--:--";
-  document.getElementById("breakStartTime").textContent = today?.breakStart || "--:--";
-  document.getElementById("breakEndTime").textContent = today?.breakEnd || "--:--";
+  document.getElementById("breakCount").textContent = `${breaks.length}回`;
+  document.getElementById("breakTime").textContent = formatMinutes(breakTotal(today));
   document.getElementById("outTime").textContent = today?.out || "--:--";
-
-  let breakMins = 0;
-  if(today?.breakStart && today?.breakEnd) breakMins = diffMinutes(toMinutes(today.breakStart),toMinutes(today.breakEnd));
-  document.getElementById("breakTime").textContent = formatMinutes(breakMins);
 
   let work="--";
   if(today?.in && today?.out){
     const total = diffMinutes(toMinutes(today.in),toMinutes(today.out));
-    work = formatMinutes(Math.max(0,total-breakMins));
+    work = formatMinutes(Math.max(0,total-breakTotal(today)));
   }
   document.getElementById("workTime").textContent=work;
 
+  const details=document.getElementById("breakDetails");
+  details.innerHTML="";
+  if(breaks.length){
+    const title=document.createElement("div"); title.className="label"; title.style.marginTop="12px"; title.textContent="休憩の内訳";
+    const list=document.createElement("ul"); list.className="break-list";
+    breaks.forEach((b,i)=>{
+      const li=document.createElement("li"); li.className="row";
+      const mins=b.start&&b.end?diffMinutes(toMinutes(b.start),toMinutes(b.end)):0;
+      li.innerHTML=`<span class="label">休憩${i+1}</span><span class="value">${b.start||"--:--"}〜${b.end||"--:--"}${b.end?`（${formatMinutes(mins)}）`:"（休憩中）"}</span>`;
+      list.appendChild(li);
+    });
+    details.append(title,list);
+  }
+
   inBtn.disabled=!!today?.in;
-  outBtn.disabled=!today?.in || !!today?.out || !!today?.breakStart && !today?.breakEnd;
+  outBtn.disabled=!today?.in || !!today?.out || activeBreak(today);
   breakBtn.disabled=!today?.in || !!today?.out;
-  breakBtn.textContent = today?.breakStart && !today?.breakEnd ? "休憩終了" : "休憩開始";
+  breakBtn.textContent = activeBreak(today) ? "休憩終了" : "休憩開始";
 
   let status="本日は未出勤です";
-  if(today?.in && !today?.out && today?.breakStart && !today?.breakEnd) status="休憩中です";
+  if(today?.in && !today?.out && activeBreak(today)) status=`休憩中です（${breaks.length}回目）`;
   else if(today?.in && !today?.out) status="勤務中です";
   else if(today?.out) status="本日の勤務は終了しています";
   document.getElementById("status").textContent=status;
@@ -117,10 +147,11 @@ function render(){
   history.innerHTML="";
   if(!records.length){history.innerHTML='<div class="empty">まだ記録がありません</div>';return}
   [...records].reverse().forEach(r=>{
-    const b = r.breakStart && r.breakEnd ? `　休憩 ${r.breakStart}〜${r.breakEnd}` : "";
-    const bm = r.breakStart && r.breakEnd ? `　休憩 ${formatMinutes(diffMinutes(toMinutes(r.breakStart),toMinutes(r.breakEnd)))}` : "";
+    const rs=getBreaks(r);
+    const breakText=rs.length?`<br>${rs.map((b,i)=>`休憩${i+1} ${b.start||"--:--"}〜${b.end||"--:--"}`).join("　")}`:"";
+    const bm=`休憩合計 ${formatMinutes(breakTotal(r))}`;
     const el=document.createElement("div"); el.className="entry";
-    el.innerHTML=`<strong>${r.date}</strong><span class="small">出勤 ${r.in||"--:--"}${b}<br>退勤 ${r.out||"--:--"}${bm}</span>`;
+    el.innerHTML=`<strong>${r.date}</strong><span class="small">出勤 ${r.in||"--:--"}<br>退勤 ${r.out||"--:--"}<br>${bm}${breakText}</span>`;
     history.appendChild(el);
   });
 }
@@ -128,9 +159,10 @@ function render(){
 function punch(type){
   const records=load(), key=todayKey(), time=fmtTime(new Date());
   let r=records.find(x=>x.date===key);
-  if(!r){r={date:key};records.push(r)}
+  if(!r){r={date:key,breaks:[]};records.push(r)}
+  if(!Array.isArray(r.breaks))r.breaks=[];
   if(type==="in" && !r.in) r.in=time;
-  if(type==="out" && r.in && !r.out && !(r.breakStart && !r.breakEnd)) r.out=time;
+  if(type==="out" && r.in && !r.out && !activeBreak(r)) r.out=time;
   save(records); render();
 }
 
@@ -138,8 +170,12 @@ function toggleBreak(){
   const records=load(), key=todayKey(), time=fmtTime(new Date());
   let r=records.find(x=>x.date===key);
   if(!r || !r.in || r.out) return;
-  if(r.breakStart && !r.breakEnd) r.breakEnd=time;
-  else if(!r.breakStart) r.breakStart=time;
+  if(!Array.isArray(r.breaks))r.breaks=[];
+  if(activeBreak(r)){
+    r.breaks[r.breaks.length-1].end=time;
+  }else{
+    r.breaks.push({start:time,end:null});
+  }
   save(records); render();
 }
 
