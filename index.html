@@ -136,7 +136,7 @@ function renderUsers(){
  add(list,true);
  const title=document.createElement("p");title.className="notice";title.textContent="登録済みの名前から選択";setup.appendChild(title);const box=document.createElement("div");box.className="user-list";setup.appendChild(box);add(box,false);
 }
-function showApp(){const name=currentUser();document.getElementById("userSetup").classList.toggle("hidden",!!name);document.getElementById("app").classList.toggle("hidden",!name);document.getElementById("currentUser").textContent=name;renderUsers();render()}
+function showApp(){const name=currentUser();const setup=document.getElementById("userSetup"),app=document.getElementById("app");setup.classList.remove("screen-hidden");app.classList.remove("screen-hidden");setup.classList.toggle("hidden",!!name);app.classList.toggle("hidden",!name);document.getElementById("currentUser").textContent=name;renderUsers();render()}
 function selectUser(name){setCurrentUser(name);migrateOldData(name);showApp()}
 function addUser(){const input=document.getElementById("nameInput"),name=input.value.trim();if(!name){alert("名前を入力してください");return}const us=users();if(!us.includes(name)){us.push(name);saveUsers(us)}setCurrentUser(name);input.value="";showApp()}
 function renameUser(name){
@@ -162,7 +162,7 @@ function renameUser(name){
  alert(`名前を「${newName}」に変更しました。\n勤怠データも引き継がれています。`);
 }
 function deleteUser(name){if(!confirm(`${name}さんを利用者一覧から外しますか？\n\n勤怠データは削除されず、この端末に残ります。`))return;saveUsers(users().filter(x=>x!==name));if(currentUser()===name){localStorage.removeItem(CURRENT_KEY);document.getElementById("userSetup").classList.remove("hidden");document.getElementById("app").classList.add("hidden")}renderUsers();populateAdminHistoryUsers();populateMonthlyUsers();render()}
-function switchUser(){document.getElementById("app").classList.add("hidden");document.getElementById("userSetup").classList.remove("hidden");document.getElementById("adminPanel").classList.add("hidden");renderUsers()}
+function switchUser(){const app=document.getElementById("app"),setup=document.getElementById("userSetup");app.classList.add("hidden");app.classList.remove("screen-hidden");setup.classList.remove("hidden","screen-hidden");document.getElementById("adminPanel").classList.add("hidden");renderUsers();window.scrollTo({top:0,behavior:"smooth"})}
 function openAdmin(){
  const saved=localStorage.getItem(ADMIN_KEY);
  const modal=document.getElementById("passwordModal"), input=document.getElementById("adminPasswordInput");
@@ -204,6 +204,7 @@ function closeAdmin(){
  document.getElementById("mainNotice").classList.remove("screen-hidden");
  document.getElementById("app").classList.add("screen-hidden");
  document.getElementById("userSetup").classList.remove("screen-hidden");
+ document.getElementById("userSetup").classList.remove("hidden");
  renderUsers();
  window.scrollTo({top:0,behavior:"smooth"});
 }

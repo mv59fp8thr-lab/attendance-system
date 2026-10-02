@@ -1,4 +1,4 @@
-const CACHE="attendance-v15-admin-return";
+const CACHE="attendance-v17-admin-return";
 const ASSETS=["./","./index.html","./manifest.json"];
 self.addEventListener("install",event=>{event.waitUntil(caches.open(CACHE).then(async cache=>{for(const url of ASSETS){try{await cache.add(url)}catch(e){}}}).then(()=>self.skipWaiting()))});
 self.addEventListener("activate",event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
