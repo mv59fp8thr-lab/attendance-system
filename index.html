@@ -30,14 +30,14 @@
 
   <button class="attendance-list-btn" id="openAttendanceListBtn" type="button">👥 勤怠一覧</button>
 
+  <button class="admin-btn" id="adminBtn" type="button">🔐 管理者メニュー</button>
+</section>
+
 <section class="card hidden" id="mainAttendanceListCard">
   <div class="admin-head"><h2>勤怠一覧</h2><button class="close-btn" id="closeAttendanceListBtn" type="button">閉じる</button></div>
   <p class="notice">登録されている全員の現在の状態を確認できます。勤務中・休憩中・退勤済み・未出勤をリアルタイムで表示します。</p>
   <div class="attendance-list" id="mainAttendanceList"></div>
   <div class="notice attendance-list-updated" id="mainAttendanceListUpdated"></div>
-</section>
-
-  <button class="admin-btn" id="adminBtn" type="button">🔐 管理者メニュー</button>
 </section>
 
 <div id="app" class="hidden">
@@ -251,6 +251,26 @@ function closeAdmin(){
 }
 function changeAdminPassword(){const input=document.getElementById("newAdminPassword"),p=input.value.trim();if(p.length<4){alert("4文字以上で入力してください。");return;}localStorage.setItem(ADMIN_KEY,p);input.value="";alert("管理者パスワードを変更しました。");}
 
+function openAttendanceListScreen(){
+ document.getElementById("mainHeader").classList.add("screen-hidden");
+ document.getElementById("userSetup").classList.add("screen-hidden");
+ document.getElementById("app").classList.add("screen-hidden");
+ document.getElementById("mainNotice").classList.add("screen-hidden");
+ const card=document.getElementById("mainAttendanceListCard");
+ card.classList.remove("hidden");
+ window.scrollTo({top:0,behavior:"smooth"});
+ renderAttendanceList();
+}
+function closeAttendanceListScreen(){
+ document.getElementById("mainAttendanceListCard").classList.add("hidden");
+ document.getElementById("mainHeader").classList.remove("screen-hidden");
+ document.getElementById("mainNotice").classList.remove("screen-hidden");
+ document.getElementById("userSetup").classList.remove("screen-hidden");
+ document.getElementById("userSetup").classList.remove("hidden");
+ document.getElementById("app").classList.add("screen-hidden");
+ window.scrollTo({top:0,behavior:"smooth"});
+}
+
 function renderAttendanceList(){
  const list=document.getElementById("mainAttendanceList"),updated=document.getElementById("mainAttendanceListUpdated");
  if(!list)return;
@@ -400,7 +420,7 @@ function punch(type){
 function toggleBreak(){const name=currentUser();if(!name)return;const records=loadRecords(name),key=todayKey(),time=fmtTime(new Date());const r=records.find(x=>x.date===key);if(!r||!activeSession(r))return;if(!Array.isArray(r.breaks))r.breaks=[];if(activeBreak(r))r.breaks[r.breaks.length-1].end=time;else r.breaks.push({start:time,end:null});saveRecords(name,records);render()}
 
 function on(id,event,fn){const el=document.getElementById(id);if(el)el.addEventListener(event,fn)}
-on("addUserBtn","click",addUser);on("calendarUserSelect","change",()=>{calendarSelectedDate="";renderCalendar()});on("calendarPrevBtn","click",()=>moveCalendarMonth(-1));on("calendarNextBtn","click",()=>moveCalendarMonth(1));on("adminHistoryUserSelect","change",()=>renderHistoryFor(document.getElementById("adminHistoryUserSelect").value));on("monthlyUserSelect","change",renderMonthlySummary);on("monthlyMonthSelect","change",renderMonthlySummary);on("editUserSelect","change",populateEditDates);on("editDateSelect","change",loadEditRecord);on("addBreakEditBtn","click",addEditBreak);on("saveAttendanceEditBtn","click",saveAttendanceEdit);on("openAttendanceListBtn","click",()=>{const card=document.getElementById("mainAttendanceListCard");card.classList.remove("hidden");renderAttendanceList();card.scrollIntoView({behavior:"smooth",block:"start"})});on("closeAttendanceListBtn","click",()=>{document.getElementById("mainAttendanceListCard").classList.add("hidden")});on("adminBtn","click",openAdmin);on("closeAdminBtn","click",closeAdmin);on("changeAdminPasswordBtn","click",changeAdminPassword);on("nameInput","keydown",e=>{if(e.key==="Enter")addUser()});on("switchUserBtn","click",switchUser);on("inBtn","click",()=>punch("in"));on("outBtn","click",()=>punch("out"));on("breakBtn","click",toggleBreak);
+on("addUserBtn","click",addUser);on("calendarUserSelect","change",()=>{calendarSelectedDate="";renderCalendar()});on("calendarPrevBtn","click",()=>moveCalendarMonth(-1));on("calendarNextBtn","click",()=>moveCalendarMonth(1));on("adminHistoryUserSelect","change",()=>renderHistoryFor(document.getElementById("adminHistoryUserSelect").value));on("monthlyUserSelect","change",renderMonthlySummary);on("monthlyMonthSelect","change",renderMonthlySummary);on("editUserSelect","change",populateEditDates);on("editDateSelect","change",loadEditRecord);on("addBreakEditBtn","click",addEditBreak);on("saveAttendanceEditBtn","click",saveAttendanceEdit);on("openAttendanceListBtn","click",openAttendanceListScreen);on("closeAttendanceListBtn","click",closeAttendanceListScreen);on("adminBtn","click",openAdmin);on("closeAdminBtn","click",closeAdmin);on("changeAdminPasswordBtn","click",changeAdminPassword);on("nameInput","keydown",e=>{if(e.key==="Enter")addUser()});on("switchUserBtn","click",switchUser);on("inBtn","click",()=>punch("in"));on("outBtn","click",()=>punch("out"));on("breakBtn","click",toggleBreak);
 // 旧バージョンの共通勤怠データが残っていても、複数利用者へ混ざらないようにする。
 try{if(users().length>1)localStorage.removeItem(OLD_KEY);}catch(e){}
 renderUsers();showApp();setInterval(render,1000);
