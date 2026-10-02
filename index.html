@@ -35,6 +35,13 @@
   <button class="secondary" id="switchUserBtn" type="button">利用者を切り替える</button>
 </section>
 
+<section class="card" id="mainAttendanceListCard">
+  <div class="admin-head"><h2>勤怠一覧</h2><span class="tag">リアルタイム</span></div>
+  <p class="notice">登録されている全員の現在の状態を確認できます。</p>
+  <div class="attendance-list" id="mainAttendanceList"></div>
+  <div class="notice attendance-list-updated" id="mainAttendanceListUpdated"></div>
+</section>
+
 <section class="card"><div class="clock" id="clock">--:--:--</div><div class="status" id="status">読み込み中…</div><div class="buttons"><button id="inBtn" type="button">出勤</button><button id="outBtn" type="button">退勤</button><button id="breakBtn" type="button">休憩開始</button></div></section>
 
 <section class="card"><h2>今日の記録</h2><div class="row"><span class="label">出勤時刻</span><span class="value" id="inTime">--:--</span></div><div class="row"><span class="label">勤務回数</span><span class="value" id="sessionCount">0回</span></div><div class="row"><span class="label">休憩回数</span><span class="value" id="breakCount">0回</span></div><div class="row"><span class="label">休憩時間</span><span class="value" id="breakTime">0時間0分</span></div><div class="row"><span class="label">退勤時刻</span><span class="value" id="outTime">--:--</span></div><div class="row"><span class="label">実働時間</span><span class="value" id="workTime">--</span></div><div id="breakDetails"></div></section>
@@ -158,6 +165,7 @@ function workTotal(r,includeOpen=false){
 }
 function activeBreak(r){const b=getBreaks(r);return activeSession(r)&&b.length>0&&b[b.length-1].start&&!b[b.length-1].end}
 function todayKey(){return fmtDate(new Date())}
+function escapeHtml(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]))}
 
 function renderUsers(){
  const list=document.getElementById("userList"), setup=document.getElementById("existingUsers");
@@ -243,8 +251,8 @@ function closeAdmin(){
 function changeAdminPassword(){const input=document.getElementById("newAdminPassword"),p=input.value.trim();if(p.length<4){alert("4文字以上で入力してください。");return;}localStorage.setItem(ADMIN_KEY,p);input.value="";alert("管理者パスワードを変更しました。");}
 
 function renderAttendanceList(){
- const list=document.getElementById("attendanceList"),updated=document.getElementById("attendanceListUpdated");
- if(!list)return;
+ const list=document.getElementById("attendanceList"),updated=document.getElementById("attendanceListUpdated"),mainList=document.getElementById("mainAttendanceList"),mainUpdated=document.getElementById("mainAttendanceListUpdated");
+ if(!list&&!mainList)return;
  const us=users();
  if(!us.length){list.innerHTML='<div class="empty">登録されている利用者がいません</div>';if(updated)updated.textContent="";return;}
  list.innerHTML="";
