@@ -38,9 +38,6 @@
 
 <section class="card"><h2>今日の記録</h2><div class="row"><span class="label">出勤時刻</span><span class="value" id="inTime">--:--</span></div><div class="row"><span class="label">休憩回数</span><span class="value" id="breakCount">0回</span></div><div class="row"><span class="label">休憩時間</span><span class="value" id="breakTime">0時間0分</span></div><div class="row"><span class="label">退勤時刻</span><span class="value" id="outTime">--:--</span></div><div class="row"><span class="label">実働時間</span><span class="value" id="workTime">--</span></div><div id="breakDetails"></div></section>
 
-<section class="card"><h2>この人の履歴</h2><div class="history" id="history"></div><button class="danger" id="clearBtn" type="button">この人の履歴をすべて削除</button></section>
-
-
 </div>
 
 
@@ -88,6 +85,12 @@
     <div class="calendar-detail" id="calendarDetail"><h4>日付を選択</h4><div class="notice">カレンダーの日付をタップすると、その日の勤怠が表示されます。</div></div>
   </div>
 
+  <div class="admin-note"><strong>📋 勤怠履歴一覧</strong><br><span class="notice">管理者だけが利用者ごとの過去の勤怠履歴を確認・削除できます。</span></div>
+  <select class="input" id="adminHistoryUserSelect"></select>
+  <div class="history-summary" id="adminHistorySummary"></div>
+  <div class="history" id="history"></div>
+  <button class="danger" id="clearBtn" type="button">この人の履歴をすべて削除</button>
+
   <h3>管理者パスワード変更</h3>
   <input class="input" id="newAdminPassword" type="password" maxlength="30" placeholder="新しいパスワード">
   <button class="primary" id="changeAdminPasswordBtn" type="button">パスワードを変更</button>
@@ -126,7 +129,7 @@ function renderUsers(){
 function showApp(){const name=currentUser();document.getElementById("userSetup").classList.toggle("hidden",!!name);document.getElementById("app").classList.toggle("hidden",!name);document.getElementById("currentUser").textContent=name;renderUsers();render()}
 function selectUser(name){setCurrentUser(name);migrateOldData(name);showApp()}
 function addUser(){const input=document.getElementById("nameInput"),name=input.value.trim();if(!name){alert("名前を入力してください");return}const us=users();if(!us.includes(name)){us.push(name);saveUsers(us)}setCurrentUser(name);input.value="";showApp()}
-function deleteUser(name){if(!confirm(`${name}さんを利用者一覧から外しますか？\n\n勤怠データは削除されず、この端末に残ります。`))return;saveUsers(users().filter(x=>x!==name));if(currentUser()===name){localStorage.removeItem(CURRENT_KEY);document.getElementById("userSetup").classList.remove("hidden");document.getElementById("app").classList.add("hidden")}renderUsers();render()}
+function deleteUser(name){if(!confirm(`${name}さんを利用者一覧から外しますか？\n\n勤怠データは削除されず、この端末に残ります。`))return;saveUsers(users().filter(x=>x!==name));if(currentUser()===name){localStorage.removeItem(CURRENT_KEY);document.getElementById("userSetup").classList.remove("hidden");document.getElementById("app").classList.add("hidden")}renderUsers();populateAdminHistoryUsers();render()}
 function switchUser(){document.getElementById("app").classList.add("hidden");document.getElementById("userSetup").classList.remove("hidden");document.getElementById("adminPanel").classList.add("hidden");renderUsers()}
 function openAdmin(){
  const saved=localStorage.getItem(ADMIN_KEY);
@@ -146,12 +149,34 @@ function openAdmin(){
    document.getElementById("adminPanel").classList.remove("hidden");
    renderUsers();
    populateEditUsers();
+   populateAdminHistoryUsers();
    document.getElementById("adminPanel").scrollIntoView({behavior:"smooth",block:"start"});
  };
  input.onkeydown=(e)=>{if(e.key==="Enter")ok.click();if(e.key==="Escape")cancel.click();};
 }
 function closeAdmin(){document.getElementById("adminPanel").classList.add("hidden")}
 function changeAdminPassword(){const input=document.getElementById("newAdminPassword"),p=input.value.trim();if(p.length<4){alert("4文字以上で入力してください。");return;}localStorage.setItem(ADMIN_KEY,p);input.value="";alert("管理者パスワードを変更しました。");}
+
+function renderHistoryFor(name){
+ const history=document.getElementById("history"),summary=document.getElementById("adminHistorySummary");
+ if(!history||!summary)return;
+ history.innerHTML="";summary.innerHTML="";
+ if(!name){history.innerHTML='<div class="empty">利用者を選択してください</div>';return;}
+ const records=loadRecords(name);
+ if(!records.length){history.innerHTML='<div class="empty">まだ記録がありません</div>';return;}
+ const sorted=[...records].sort((a,b)=>String(b.date).localeCompare(String(a.date)));
+ const workedDays=sorted.filter(r=>r.in).length;
+ const totalBreak=sorted.reduce((sum,r)=>sum+breakTotal(r),0);
+ const totalWork=sorted.reduce((sum,r)=>sum+(r.in&&r.out?Math.max(0,diffMinutes(toMinutes(r.in),toMinutes(r.out))-breakTotal(r)):0),0);
+ summary.innerHTML=`<div class="summary-box"><span class="summary-label">出勤日数</span><strong>${workedDays}日</strong></div><div class="summary-box"><span class="summary-label">実働合計</span><strong>${formatMinutes(totalWork)}</strong></div><div class="summary-box"><span class="summary-label">休憩合計</span><strong>${formatMinutes(totalBreak)}</strong></div>`;
+ sorted.forEach(r=>{const rs=getBreaks(r),el=document.createElement("div");el.className="entry";const work=r.in&&r.out?formatMinutes(Math.max(0,diffMinutes(toMinutes(r.in),toMinutes(r.out))-breakTotal(r))):"未確定";const status=r.out?"勤務終了":r.in?"勤務中・未退勤":"未出勤";const breakHtml=rs.length?`<div class="history-breaks"><span class="history-label">休憩の内訳</span>${rs.map((b,i)=>`<div class="history-break">休憩${i+1}：${b.start||"--:--"} ～ ${b.end||"--:--"}${b.start&&b.end?`（${formatMinutes(diffMinutes(toMinutes(b.start),toMinutes(b.end)))}）`:"（休憩中）"}</div>`).join("")}</div>`:"";el.innerHTML=`<div class="entry-head"><span class="entry-date">${r.date}</span><span class="entry-status">${status}</span></div><div class="entry-grid"><div class="history-item"><span class="history-label">出勤</span><span class="history-value">${r.in||"--:--"}</span></div><div class="history-item"><span class="history-label">退勤</span><span class="history-value">${r.out||"--:--"}</span></div><div class="history-item"><span class="history-label">休憩</span><span class="history-value">${formatMinutes(breakTotal(r))}</span></div><div class="history-item"><span class="history-label">実働</span><span class="history-value">${work}</span></div></div>${breakHtml}`;history.appendChild(el);});
+}
+function populateAdminHistoryUsers(){
+ const sel=document.getElementById("adminHistoryUserSelect");if(!sel)return;
+ const us=users(),old=sel.value;sel.innerHTML="";us.forEach(name=>{const o=document.createElement("option");o.value=name;o.textContent=name;sel.appendChild(o)});
+ if(old&&us.includes(old))sel.value=old;else if(currentUser()&&us.includes(currentUser()))sel.value=currentUser();
+ renderHistoryFor(sel.value);
+}
 
 function populateEditUsers(){
  const sel=document.getElementById("editUserSelect");if(sel){const us=users();sel.innerHTML="";us.forEach(name=>{const o=document.createElement("option");o.value=name;o.textContent=name;sel.appendChild(o)});if(currentUser()&&us.includes(currentUser()))sel.value=currentUser();populateEditDates();}
@@ -212,13 +237,14 @@ function render(){
  const details=document.getElementById("breakDetails");details.innerHTML="";if(breaks.length){const title=document.createElement("div");title.className="label";title.style.marginTop="12px";title.textContent="休憩の内訳";const list=document.createElement("ul");list.className="break-list";breaks.forEach((b,i)=>{const li=document.createElement("li");li.className="row";const mins=b.start&&b.end?diffMinutes(toMinutes(b.start),toMinutes(b.end)):0;li.innerHTML=`<span class="label">休憩${i+1}</span><span class="value">${b.start||"--:--"}〜${b.end||"--:--"}${b.end?`（${formatMinutes(mins)}）`:"（休憩中）"}</span>`;list.appendChild(li)});details.append(title,list)}
  const inBtn=document.getElementById("inBtn"),outBtn=document.getElementById("outBtn"),breakBtn=document.getElementById("breakBtn");inBtn.disabled=!!today?.in;outBtn.disabled=!today?.in||!!today?.out||activeBreak(today);breakBtn.disabled=!today?.in||!!today?.out;breakBtn.textContent=activeBreak(today)?"休憩終了":"休憩開始";
  let status="本日は未出勤です";if(today?.in&&!today?.out&&activeBreak(today))status=`休憩中です（${breaks.length}回目）`;else if(today?.in&&!today?.out)status="勤務中です";else if(today?.out)status="本日の勤務は終了しています";document.getElementById("status").textContent=status;
- const history=document.getElementById("history");history.innerHTML="";const oldSummary=document.getElementById("historySummary");if(oldSummary)oldSummary.remove();if(!records.length){history.innerHTML='<div class="empty">まだ記録がありません</div>';}else{const sorted=[...records].sort((a,b)=>String(b.date).localeCompare(String(a.date)));const workedDays=sorted.filter(r=>r.in).length;const totalBreak=sorted.reduce((sum,r)=>sum+breakTotal(r),0);const totalWork=sorted.reduce((sum,r)=>sum+(r.in&&r.out?Math.max(0,diffMinutes(toMinutes(r.in),toMinutes(r.out))-breakTotal(r)):0),0);const summary=document.createElement("div");summary.id="historySummary";summary.className="history-summary";summary.innerHTML=`<div class="summary-box"><span class="summary-label">出勤日数</span><strong>${workedDays}日</strong></div><div class="summary-box"><span class="summary-label">実働合計</span><strong>${formatMinutes(totalWork)}</strong></div><div class="summary-box"><span class="summary-label">休憩合計</span><strong>${formatMinutes(totalBreak)}</strong></div>`;history.parentNode.insertBefore(summary,history);sorted.forEach(r=>{const rs=getBreaks(r),el=document.createElement("div");el.className="entry";const work=r.in&&r.out?formatMinutes(Math.max(0,diffMinutes(toMinutes(r.in),toMinutes(r.out))-breakTotal(r))):"未確定";const status=r.out?"勤務終了":r.in?"勤務中・未退勤":"未出勤";const breakHtml=rs.length?`<div class="history-breaks"><span class="history-label">休憩の内訳</span>${rs.map((b,i)=>`<div class="history-break">休憩${i+1}：${b.start||"--:--"} ～ ${b.end||"--:--"}${b.start&&b.end?`（${formatMinutes(diffMinutes(toMinutes(b.start),toMinutes(b.end)))}）`:"（休憩中）"}</div>`).join("")}</div>`:"";el.innerHTML=`<div class="entry-head"><span class="entry-date">${r.date}</span><span class="entry-status">${status}</span></div><div class="entry-grid"><div class="history-item"><span class="history-label">出勤</span><span class="history-value">${r.in||"--:--"}</span></div><div class="history-item"><span class="history-label">退勤</span><span class="history-value">${r.out||"--:--"}</span></div><div class="history-item"><span class="history-label">休憩</span><span class="history-value">${formatMinutes(breakTotal(r))}</span></div><div class="history-item"><span class="history-label">実働</span><span class="history-value">${work}</span></div></div>${breakHtml}`;history.appendChild(el)})}
+ const adminHistorySel=document.getElementById("adminHistoryUserSelect");
+ if(adminHistorySel)renderHistoryFor(adminHistorySel.value||name);
 }
 function punch(type){const name=currentUser();if(!name)return;const records=loadRecords(name),key=todayKey(),time=fmtTime(new Date());let r=records.find(x=>x.date===key);if(!r){r={date:key,breaks:[]};records.push(r)}if(!Array.isArray(r.breaks))r.breaks=[];if(type==="in"&&!r.in)r.in=time;if(type==="out"&&r.in&&!r.out&&!activeBreak(r))r.out=time;saveRecords(name,records);render()}
 function toggleBreak(){const name=currentUser();if(!name)return;const records=loadRecords(name),key=todayKey(),time=fmtTime(new Date());const r=records.find(x=>x.date===key);if(!r||!r.in||r.out)return;if(!Array.isArray(r.breaks))r.breaks=[];if(activeBreak(r))r.breaks[r.breaks.length-1].end=time;else r.breaks.push({start:time,end:null});saveRecords(name,records);render()}
 
 function on(id,event,fn){const el=document.getElementById(id);if(el)el.addEventListener(event,fn)}
-on("addUserBtn","click",addUser);on("calendarUserSelect","change",()=>{calendarSelectedDate="";renderCalendar()});on("calendarPrevBtn","click",()=>moveCalendarMonth(-1));on("calendarNextBtn","click",()=>moveCalendarMonth(1));on("editUserSelect","change",populateEditDates);on("editDateSelect","change",loadEditRecord);on("addBreakEditBtn","click",addEditBreak);on("saveAttendanceEditBtn","click",saveAttendanceEdit);on("adminBtn","click",openAdmin);on("closeAdminBtn","click",closeAdmin);on("changeAdminPasswordBtn","click",changeAdminPassword);on("nameInput","keydown",e=>{if(e.key==="Enter")addUser()});on("switchUserBtn","click",switchUser);on("inBtn","click",()=>punch("in"));on("outBtn","click",()=>punch("out"));on("breakBtn","click",toggleBreak);on("clearBtn","click",()=>{const name=currentUser();if(name&&confirm(`${name}さんの履歴をすべて削除しますか？`)){localStorage.removeItem(userKey(name));render()}});
+on("addUserBtn","click",addUser);on("calendarUserSelect","change",()=>{calendarSelectedDate="";renderCalendar()});on("calendarPrevBtn","click",()=>moveCalendarMonth(-1));on("calendarNextBtn","click",()=>moveCalendarMonth(1));on("adminHistoryUserSelect","change",()=>renderHistoryFor(document.getElementById("adminHistoryUserSelect").value));on("editUserSelect","change",populateEditDates);on("editDateSelect","change",loadEditRecord);on("addBreakEditBtn","click",addEditBreak);on("saveAttendanceEditBtn","click",saveAttendanceEdit);on("adminBtn","click",openAdmin);on("closeAdminBtn","click",closeAdmin);on("changeAdminPasswordBtn","click",changeAdminPassword);on("nameInput","keydown",e=>{if(e.key==="Enter")addUser()});on("switchUserBtn","click",switchUser);on("inBtn","click",()=>punch("in"));on("outBtn","click",()=>punch("out"));on("breakBtn","click",toggleBreak);on("clearBtn","click",()=>{const sel=document.getElementById("adminHistoryUserSelect"),name=sel?.value;if(name&&confirm(`${name}さんの履歴をすべて削除しますか？`)){localStorage.removeItem(userKey(name));renderHistoryFor(name);renderCalendar()}});
 renderUsers();showApp();setInterval(render,1000);
 if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js").catch(console.error))}
 </script>
