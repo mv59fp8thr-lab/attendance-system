@@ -202,8 +202,9 @@ function closeAdmin(){
  document.getElementById("adminPanel").classList.remove("admin-screen");
  document.getElementById("mainHeader").classList.remove("screen-hidden");
  document.getElementById("mainNotice").classList.remove("screen-hidden");
- if(currentUser()){document.getElementById("app").classList.remove("screen-hidden");document.getElementById("userSetup").classList.add("screen-hidden");}
- else{document.getElementById("userSetup").classList.remove("screen-hidden");document.getElementById("app").classList.add("screen-hidden");}
+ document.getElementById("app").classList.add("screen-hidden");
+ document.getElementById("userSetup").classList.remove("screen-hidden");
+ renderUsers();
  window.scrollTo({top:0,behavior:"smooth"});
 }
 function changeAdminPassword(){const input=document.getElementById("newAdminPassword"),p=input.value.trim();if(p.length<4){alert("4文字以上で入力してください。");return;}localStorage.setItem(ADMIN_KEY,p);input.value="";alert("管理者パスワードを変更しました。");}
