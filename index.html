@@ -174,7 +174,7 @@ function renameUser(name){
  render();
  alert(`名前を「${newName}」に変更しました。\n勤怠データも引き継がれています。`);
 }
-function deleteUser(name){if(!confirm(`${name}さんを利用者一覧から外しますか？\n\n勤怠データは削除されず、この端末に残ります。`))return;saveUsers(users().filter(x=>x!==name));if(currentUser()===name){localStorage.removeItem(CURRENT_KEY);document.getElementById("userSetup").classList.remove("hidden");document.getElementById("app").classList.add("hidden")}renderUsers();populateAdminHistoryUsers();populateMonthlyUsers();render()}
+function deleteUser(name){if(!confirm(`${name}さんを利用者一覧から削除しますか？\n\nこの人の勤怠データもこの端末からすべて削除されます。`))return;localStorage.removeItem(userKey(name));saveUsers(users().filter(x=>x!==name));if(currentUser()===name){localStorage.removeItem(CURRENT_KEY);document.getElementById("userSetup").classList.remove("hidden");document.getElementById("app").classList.add("hidden")}renderUsers();populateAdminHistoryUsers();populateMonthlyUsers();render()}
 function switchUser(){const app=document.getElementById("app"),setup=document.getElementById("userSetup");app.classList.add("hidden");app.classList.remove("screen-hidden");setup.classList.remove("hidden","screen-hidden");document.getElementById("adminPanel").classList.add("hidden");renderUsers();window.scrollTo({top:0,behavior:"smooth"})}
 function openAdmin(){
  const saved=localStorage.getItem(ADMIN_KEY);
