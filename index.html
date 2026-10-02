@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.json">
 <title>勤怠管理</title>
 <style>
-*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f3f6fb;color:#172033}.wrap{max-width:560px;margin:auto;padding:20px 16px 40px}.header{padding:10px 4px 18px}h1{margin:0;font-size:28px}.date{margin-top:6px;color:#667085}.card{background:#fff;border-radius:20px;padding:20px;margin:14px 0;box-shadow:0 6px 22px #0000000d}.clock{text-align:center;font-size:48px;font-weight:700;letter-spacing:1px}.status{text-align:center;margin:6px 0 18px;color:#667085}.buttons{display:grid;grid-template-columns:1fr 1fr;gap:12px}button{border:0;border-radius:14px;padding:17px 10px;font-size:18px;font-weight:700;color:white;cursor:pointer}button:active{transform:scale(.98)}#inBtn{background:#16a34a}#outBtn{background:#dc2626}#breakBtn{grid-column:1/-1;background:#f59e0b}button:disabled{opacity:.35;cursor:not-allowed}.row{display:flex;justify-content:space-between;gap:16px;padding:12px 0;border-bottom:1px solid #eef1f5}.row:last-child{border-bottom:0}.label{color:#667085}.value{font-weight:700;text-align:right}.empty{text-align:center;color:#98a2b3;padding:10px}.history{max-height:460px;overflow:auto}.entry{padding:12px 0;border-bottom:1px solid #eef1f5}.entry strong{display:block;margin-bottom:5px}.small{font-size:14px;color:#667085;line-height:1.7}.break-list{margin-top:4px;padding-left:0;list-style:none}.break-list li{margin:2px 0}.danger{background:#eef2f7;color:#344054;font-size:14px;padding:10px 14px;margin-top:12px;width:100%}.primary{background:#2563eb;width:100%;margin-top:10px}.secondary{background:#eef2f7;color:#344054;width:100%;font-size:15px}.input{width:100%;padding:14px;border:1px solid #d0d5dd;border-radius:12px;font-size:17px;margin-top:8px}.user-name{font-size:18px;font-weight:700}.notice{font-size:13px;color:#667085;line-height:1.5}.hidden{display:none!important}.user-list{display:grid;gap:8px;margin-top:12px}.user-item{display:flex;gap:8px;align-items:center}.user-item button{flex:1;background:#eef2f7;color:#172033;font-size:16px;padding:12px;text-align:left}.delete-user{flex:0 0 auto!important;width:48px!important;text-align:center!important;background:#fee2e2!important;color:#b91c1c!important}.tag{display:inline-block;background:#e8f0ff;color:#2563eb;border-radius:999px;padding:4px 9px;font-size:12px;margin-left:6px}
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f3f6fb;color:#172033}.wrap{max-width:560px;margin:auto;padding:20px 16px 40px}.header{padding:10px 4px 18px}h1{margin:0;font-size:28px}.date{margin-top:6px;color:#667085}.card{background:#fff;border-radius:20px;padding:20px;margin:14px 0;box-shadow:0 6px 22px #0000000d}.clock{text-align:center;font-size:48px;font-weight:700;letter-spacing:1px}.status{text-align:center;margin:6px 0 18px;color:#667085}.buttons{display:grid;grid-template-columns:1fr 1fr;gap:12px}button{border:0;border-radius:14px;padding:17px 10px;font-size:18px;font-weight:700;color:white;cursor:pointer}button:active{transform:scale(.98)}#inBtn{background:#16a34a}#outBtn{background:#dc2626}#breakBtn{grid-column:1/-1;background:#f59e0b}button:disabled{opacity:.35;cursor:not-allowed}.row{display:flex;justify-content:space-between;gap:16px;padding:12px 0;border-bottom:1px solid #eef1f5}.row:last-child{border-bottom:0}.label{color:#667085}.value{font-weight:700;text-align:right}.empty{text-align:center;color:#98a2b3;padding:10px}.history{max-height:460px;overflow:auto}.entry{padding:12px 0;border-bottom:1px solid #eef1f5}.entry strong{display:block;margin-bottom:5px}.small{font-size:14px;color:#667085;line-height:1.7}.break-list{margin-top:4px;padding-left:0;list-style:none}.break-list li{margin:2px 0}.danger{background:#eef2f7;color:#344054;font-size:14px;padding:10px 14px;margin-top:12px;width:100%}.primary{background:#2563eb;width:100%;margin-top:10px}.secondary{background:#eef2f7;color:#344054;width:100%;font-size:15px}.input{width:100%;padding:14px;border:1px solid #d0d5dd;border-radius:12px;font-size:17px;margin-top:8px}.user-name{font-size:18px;font-weight:700}.notice{font-size:13px;color:#667085;line-height:1.5}.hidden{display:none!important}.user-list{display:grid;gap:8px;margin-top:12px}.user-item{display:flex;gap:8px;align-items:center}.user-item button{flex:1;background:#eef2f7;color:#172033;font-size:16px;padding:12px;text-align:left}.delete-user{flex:0 0 auto!important;width:48px!important;text-align:center!important;background:#fee2e2!important;color:#b91c1c!important}.tag{display:inline-block;background:#e8f0ff;color:#2563eb;border-radius:999px;padding:4px 9px;font-size:12px;margin-left:6px}.admin-btn{background:#475467;width:100%;font-size:15px;margin-top:10px}.admin-head{display:flex;justify-content:space-between;align-items:center;gap:10px}.admin-head h2{margin:0}.close-btn{background:#eef2f7;color:#344054;font-size:14px;padding:9px 12px}.password-row{display:flex;gap:8px;margin-top:10px}.password-row .input{margin-top:0}.admin-note{background:#f8fafc;border-radius:12px;padding:12px;margin-top:10px}
 </style>
 </head>
 <body>
@@ -37,13 +37,24 @@
 
 <section class="card"><h2>この人の履歴</h2><div class="history" id="history"></div><button class="danger" id="clearBtn" type="button">この人の履歴をすべて削除</button></section>
 
-<section class="card"><h2>利用者管理</h2><div class="notice">退職した人など、今後使わない名前はここから一覧から外せます。<br>※勤怠データは削除せず、この端末に残ります。</div><div class="user-list" id="userList"></div></section>
+<button class="admin-btn" id="adminBtn" type="button">🔐 管理者メニュー</button>
+
+<section class="card hidden" id="adminPanel">
+  <div class="admin-head"><h2>管理者メニュー</h2><button class="close-btn" id="closeAdminBtn" type="button">閉じる</button></div>
+  <p class="notice">ここは管理者専用です。利用者の削除はこの画面からのみ行えます。</p>
+  <div class="admin-note"><strong>利用者管理</strong><br><span class="notice">退職した人など、今後使わない名前を一覧から外します。勤怠データは削除せず、この端末に残ります。</span></div>
+  <div class="user-list" id="userList"></div>
+  <h3>管理者パスワード変更</h3>
+  <input class="input" id="newAdminPassword" type="password" maxlength="30" placeholder="新しいパスワード">
+  <button class="primary" id="changeAdminPasswordBtn" type="button">パスワードを変更</button>
+  <p class="notice">※この勤怠アプリはブラウザ内で動く簡易システムです。管理者ロックはこの端末のブラウザ内で有効です。</p>
+</section>
 </div>
 
 <p class="notice">※ データはこの端末のブラウザ内に保存されます。別のスマホやPCとは自動同期されません。複数人で同じ端末を使う場合は、利用者を切り替えてください。</p>
 </div>
 <script>
-const USERS_KEY="attendance_users_v1", CURRENT_KEY="attendance_current_user_v1", OLD_KEY="attendance_records_v2";
+const USERS_KEY="attendance_users_v1", CURRENT_KEY="attendance_current_user_v1", OLD_KEY="attendance_records_v2", ADMIN_KEY="attendance_admin_password_v1";
 const pad=n=>String(n).padStart(2,"0"), fmtTime=d=>`${pad(d.getHours())}:${pad(d.getMinutes())}`, fmtDate=d=>`${d.getFullYear()}/${pad(d.getMonth()+1)}/${pad(d.getDate())}`;
 function users(){try{return JSON.parse(localStorage.getItem(USERS_KEY)||"[]")}catch(e){return[]}}
 function saveUsers(a){localStorage.setItem(USERS_KEY,JSON.stringify(a))}
@@ -73,7 +84,25 @@ function showApp(){const name=currentUser();document.getElementById("userSetup")
 function selectUser(name){setCurrentUser(name);migrateOldData(name);showApp()}
 function addUser(){const input=document.getElementById("nameInput"),name=input.value.trim();if(!name){alert("名前を入力してください");return}const us=users();if(!us.includes(name)){us.push(name);saveUsers(us)}setCurrentUser(name);input.value="";showApp()}
 function deleteUser(name){if(!confirm(`${name}さんを利用者一覧から外しますか？\n\n勤怠データは削除されず、この端末に残ります。`))return;saveUsers(users().filter(x=>x!==name));if(currentUser()===name){localStorage.removeItem(CURRENT_KEY);document.getElementById("userSetup").classList.remove("hidden");document.getElementById("app").classList.add("hidden")}renderUsers();render()}
-function switchUser(){document.getElementById("app").classList.add("hidden");document.getElementById("userSetup").classList.remove("hidden");renderUsers()}
+function switchUser(){document.getElementById("app").classList.add("hidden");document.getElementById("userSetup").classList.remove("hidden");document.getElementById("adminPanel").classList.add("hidden");renderUsers()}
+function openAdmin(){
+ const saved=localStorage.getItem(ADMIN_KEY);
+ if(!saved){
+   const p=prompt("管理者パスワードを新しく設定してください。\n\n※4文字以上で設定してください。");
+   if(p===null)return;
+   if(p.length<4){alert("4文字以上で設定してください。");return;}
+   localStorage.setItem(ADMIN_KEY,p);
+   alert("管理者パスワードを設定しました。");
+ }else{
+   const p=prompt("管理者パスワードを入力してください。");
+   if(p!==saved){if(p!==null)alert("パスワードが違います。");return;}
+ }
+ document.getElementById("adminPanel").classList.remove("hidden");
+ renderUsers();
+ document.getElementById("adminPanel").scrollIntoView({behavior:"smooth",block:"start"});
+}
+function closeAdmin(){document.getElementById("adminPanel").classList.add("hidden")}
+function changeAdminPassword(){const input=document.getElementById("newAdminPassword"),p=input.value.trim();if(p.length<4){alert("4文字以上で入力してください。");return;}localStorage.setItem(ADMIN_KEY,p);input.value="";alert("管理者パスワードを変更しました。");}
 
 function render(){
  const now=new Date();document.getElementById("clock").textContent=`${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;document.getElementById("today").textContent=now.toLocaleDateString("ja-JP",{year:"numeric",month:"long",day:"numeric",weekday:"long"});
@@ -88,7 +117,7 @@ function render(){
 function punch(type){const name=currentUser();if(!name)return;const records=loadRecords(name),key=todayKey(),time=fmtTime(new Date());let r=records.find(x=>x.date===key);if(!r){r={date:key,breaks:[]};records.push(r)}if(!Array.isArray(r.breaks))r.breaks=[];if(type==="in"&&!r.in)r.in=time;if(type==="out"&&r.in&&!r.out&&!activeBreak(r))r.out=time;saveRecords(name,records);render()}
 function toggleBreak(){const name=currentUser();if(!name)return;const records=loadRecords(name),key=todayKey(),time=fmtTime(new Date());const r=records.find(x=>x.date===key);if(!r||!r.in||r.out)return;if(!Array.isArray(r.breaks))r.breaks=[];if(activeBreak(r))r.breaks[r.breaks.length-1].end=time;else r.breaks.push({start:time,end:null});saveRecords(name,records);render()}
 
-document.getElementById("addUserBtn").addEventListener("click",addUser);document.getElementById("nameInput").addEventListener("keydown",e=>{if(e.key==="Enter")addUser()});document.getElementById("switchUserBtn").addEventListener("click",switchUser);document.getElementById("inBtn").addEventListener("click",()=>punch("in"));document.getElementById("outBtn").addEventListener("click",()=>punch("out"));document.getElementById("breakBtn").addEventListener("click",toggleBreak);document.getElementById("clearBtn").addEventListener("click",()=>{const name=currentUser();if(name&&confirm(`${name}さんの履歴をすべて削除しますか？`)){localStorage.removeItem(userKey(name));render()}});
+document.getElementById("addUserBtn").addEventListener("click",addUser);document.getElementById("adminBtn").addEventListener("click",openAdmin);document.getElementById("closeAdminBtn").addEventListener("click",closeAdmin);document.getElementById("changeAdminPasswordBtn").addEventListener("click",changeAdminPassword);document.getElementById("nameInput").addEventListener("keydown",e=>{if(e.key==="Enter")addUser()});document.getElementById("switchUserBtn").addEventListener("click",switchUser);document.getElementById("inBtn").addEventListener("click",()=>punch("in"));document.getElementById("outBtn").addEventListener("click",()=>punch("out"));document.getElementById("breakBtn").addEventListener("click",toggleBreak);document.getElementById("clearBtn").addEventListener("click",()=>{const name=currentUser();if(name&&confirm(`${name}さんの履歴をすべて削除しますか？`)){localStorage.removeItem(userKey(name));render()}});
 renderUsers();showApp();setInterval(render,1000);
 if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js").catch(console.error))}
 </script>
