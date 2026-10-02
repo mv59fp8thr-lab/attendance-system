@@ -27,6 +27,14 @@
   <input class="input" id="nameInput" maxlength="30" placeholder="例：山田 太郎" autocomplete="name">
   <button class="primary" id="addUserBtn" type="button">この名前で開始</button>
   <div id="existingUsers"></div>
+
+<section class="card" id="mainAttendanceListCard">
+  <div class="admin-head"><h2>勤怠一覧</h2><span class="tag">リアルタイム</span></div>
+  <p class="notice">登録されている全員の現在の状態を確認できます。</p>
+  <div class="attendance-list" id="mainAttendanceList"></div>
+  <div class="notice attendance-list-updated" id="mainAttendanceListUpdated"></div>
+</section>
+
   <button class="admin-btn" id="adminBtn" type="button">🔐 管理者メニュー</button>
 </section>
 
@@ -34,13 +42,6 @@
 <section class="card">
   <div class="user-name">現在の利用者：<span id="currentUser"></span><span class="tag">個人管理</span></div>
   <button class="secondary" id="switchUserBtn" type="button">利用者を切り替える</button>
-</section>
-
-<section class="card" id="mainAttendanceListCard">
-  <div class="admin-head"><h2>勤怠一覧</h2><span class="tag">リアルタイム</span></div>
-  <p class="notice">登録されている全員の現在の状態を確認できます。</p>
-  <div class="attendance-list" id="mainAttendanceList"></div>
-  <div class="notice attendance-list-updated" id="mainAttendanceListUpdated"></div>
 </section>
 
 <section class="card"><div class="clock" id="clock">--:--:--</div><div class="status" id="status">読み込み中…</div><div class="buttons"><button id="inBtn" type="button">出勤</button><button id="outBtn" type="button">退勤</button><button id="breakBtn" type="button">休憩開始</button></div></section>
@@ -249,8 +250,8 @@ function closeAdmin(){
 function changeAdminPassword(){const input=document.getElementById("newAdminPassword"),p=input.value.trim();if(p.length<4){alert("4文字以上で入力してください。");return;}localStorage.setItem(ADMIN_KEY,p);input.value="";alert("管理者パスワードを変更しました。");}
 
 function renderAttendanceList(){
- const list=document.getElementById("attendanceList"),updated=document.getElementById("attendanceListUpdated"),mainList=document.getElementById("mainAttendanceList"),mainUpdated=document.getElementById("mainAttendanceListUpdated");
- if(!list&&!mainList)return;
+ const list=document.getElementById("mainAttendanceList"),updated=document.getElementById("mainAttendanceListUpdated");
+ if(!list)return;
  const us=users();
  if(!us.length){list.innerHTML='<div class="empty">登録されている利用者がいません</div>';if(updated)updated.textContent="";return;}
  list.innerHTML="";
@@ -401,7 +402,7 @@ on("addUserBtn","click",addUser);on("calendarUserSelect","change",()=>{calendarS
 // 旧バージョンの共通勤怠データが残っていても、複数利用者へ混ざらないようにする。
 try{if(users().length>1)localStorage.removeItem(OLD_KEY);}catch(e){}
 renderUsers();showApp();setInterval(render,1000);
-if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=25").catch(console.error))}
+if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=28").catch(console.error))}
 </script>
 </body>
 </html>
