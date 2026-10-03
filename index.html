@@ -328,9 +328,9 @@ function renderAttendanceList(){
    const records=loadRecords(name),today=records.find(r=>r.date===todayKey());
    const sessions=getSessions(today),breaks=getBreaks(today);
    let status="未出勤",cls="absent",detail="出勤 --:--　退勤 --:--";
-   if(activeBreak(today)){const currentBreak=breaks[breaks.length-1];status="休憩中";cls="breaking";detail=`休憩中（開始 ${currentBreak.start||"--:--"}）　休憩終了 --:--　出勤 ${sessions[sessions.length-1].in||"--:--"}　退勤 --:--`;}
-   else if(activeSession(today)){status="勤務中";cls="working";const lastBreak=breaks.length?breaks[breaks.length-1]:null;detail=`出勤 ${sessions[sessions.length-1].in||"--:--"}　退勤 --:--${lastBreak&&lastBreak.end?`　休憩終了 ${lastBreak.end}`:""}`;}
-   else if(sessions.length){status="退勤済み";cls="finished";const lastBreak=breaks.length?breaks[breaks.length-1]:null;detail=`出勤 ${firstIn(today)||"--:--"}　退勤 ${lastOut(today)||"--:--"}${lastBreak&&lastBreak.end?`　休憩終了 ${lastBreak.end}`:""}`;}
+   if(activeBreak(today)){const currentBreak=breaks[breaks.length-1];status="休憩中";cls="breaking";detail=`出勤 ${sessions[sessions.length-1].in||"--:--"}　退勤 --:--　休憩開始 ${currentBreak.start||"--:--"}　休憩終了 --:--`;}
+   else if(activeSession(today)){status="勤務中";cls="working";const lastBreak=breaks.length?breaks[breaks.length-1]:null;detail=`出勤 ${sessions[sessions.length-1].in||"--:--"}　退勤 --:--${lastBreak?`　休憩開始 ${lastBreak.start||"--:--"}　休憩終了 ${lastBreak.end||"--:--"}`:""}`;}
+   else if(sessions.length){status="退勤済み";cls="finished";const lastBreak=breaks.length?breaks[breaks.length-1]:null;detail=`出勤 ${firstIn(today)||"--:--"}　退勤 ${lastOut(today)||"--:--"}${lastBreak?`　休憩開始 ${lastBreak.start||"--:--"}　休憩終了 ${lastBreak.end||"--:--"}`:""}`;}
    const row=document.createElement("div");row.className="attendance-person";
    row.innerHTML=`<div class="attendance-person-head"><span class="attendance-person-name">${name}</span><span class="attendance-status ${cls}">${status}</span></div><div class="attendance-person-info"><div class="attendance-info" style="grid-column:1/-1"><span>現在の状況</span><strong>${detail}</strong></div></div>`;
    if(list)list.appendChild(row.cloneNode(true));

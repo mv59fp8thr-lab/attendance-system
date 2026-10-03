@@ -1,4 +1,4 @@
-const CACHE_NAME = 'attendance-v39-current-status-with-break-end';
+const CACHE_NAME = 'attendance-v40-current-status-with-break-end';
 const ASSETS = ['./','./index.html','./manifest.json'];
 self.addEventListener('install', event => {
   event.waitUntil(
