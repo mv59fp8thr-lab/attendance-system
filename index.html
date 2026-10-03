@@ -479,8 +479,12 @@ function on(id,event,fn){const el=document.getElementById(id);if(el)el.addEventL
 on("addUserBtn","click",addUser);on("publicAttendanceBtn","click",()=>{document.getElementById("userSetup").classList.add("hidden");document.getElementById("publicAttendancePanel").classList.remove("hidden");document.getElementById("publicRealtimeArea").classList.add("live-only-hidden");document.getElementById("publicRealtimeBtn").classList.remove("active");});on("publicRealtimeBtn","click",()=>{const area=document.getElementById("publicRealtimeArea"),btn=document.getElementById("publicRealtimeBtn");const hidden=area.classList.toggle("live-only-hidden");btn.classList.toggle("active",!hidden);if(!hidden)renderAttendanceList();});on("closePublicAttendanceBtn","click",()=>{document.getElementById("publicAttendancePanel").classList.add("hidden");document.getElementById("userSetup").classList.remove("hidden");});on("calendarUserSelect","change",()=>{calendarSelectedDate="";renderCalendar()});on("calendarPrevBtn","click",()=>moveCalendarMonth(-1));on("calendarNextBtn","click",()=>moveCalendarMonth(1));on("adminHistoryUserSelect","change",()=>renderHistoryFor(document.getElementById("adminHistoryUserSelect").value));on("adminPunchInBtn","click",()=>adminPunch("in"));on("adminPunchOutBtn","click",()=>adminPunch("out"));on("monthlyUserSelect","change",renderMonthlySummary);on("monthlyMonthSelect","change",renderMonthlySummary);on("editUserSelect","change",populateEditDates);on("editDateSelect","change",loadEditRecord);on("addBreakEditBtn","click",addEditBreak);on("saveAttendanceEditBtn","click",saveAttendanceEdit);on("adminBtn","click",openAdmin);on("closeAdminBtn","click",closeAdmin);on("changeAdminPasswordBtn","click",changeAdminPassword);on("nameInput","keydown",e=>{if(e.key==="Enter")addUser()});on("switchUserBtn","click",switchUser);on("inBtn","click",()=>punch("in"));on("outBtn","click",()=>punch("out"));on("breakBtn","click",toggleBreak);
 // 旧バージョンの共通勤怠データが残っていても、複数利用者へ混ざらないようにする。
 try{if(users().length>1)localStorage.removeItem(OLD_KEY);}catch(e){}
-renderUsers();showApp();setInterval(render,1000);
-if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=33").catch(console.error))}
+renderUsers();showApp();setInterval(()=>{
+ const now=new Date();
+ document.getElementById("clock").textContent=`${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+ document.getElementById("today").textContent=now.toLocaleDateString("ja-JP",{year:"numeric",month:"long",day:"numeric",weekday:"long"});
+},1000);
+if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=35").catch(console.error))}
 </script>
 </body>
 </html>
