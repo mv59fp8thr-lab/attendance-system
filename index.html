@@ -310,20 +310,32 @@ function renderAttendanceList(){
  const list=document.getElementById("attendanceList"),updated=document.getElementById("attendanceListUpdated"),mainList=document.getElementById("mainAttendanceList"),mainUpdated=document.getElementById("mainAttendanceListUpdated"),publicList=document.getElementById("publicAttendanceList"),publicUpdated=document.getElementById("publicAttendanceListUpdated");
  if(!list&&!mainList&&!publicList)return;
  const us=users();
- if(!us.length){list.innerHTML='<div class="empty">登録されている利用者がいません</div>';if(updated)updated.textContent="";return;}
- list.innerHTML="";
+ // 再描画する前に必ず一覧を空にする。これで同じ利用者が増殖しません。
+ if(list)list.innerHTML="";
+ if(mainList)mainList.innerHTML="";
+ if(publicList)publicList.innerHTML="";
+ if(!us.length){
+   const empty='<div class="empty">登録されている利用者がいません</div>';
+   if(list)list.innerHTML=empty;
+   if(mainList)mainList.innerHTML=empty;
+   if(publicList)publicList.innerHTML=empty;
+   if(updated)updated.textContent="";
+   if(mainUpdated)mainUpdated.textContent="";
+   if(publicUpdated)publicUpdated.textContent="";
+   return;
+ }
  us.forEach(name=>{
    const records=loadRecords(name),today=records.find(r=>r.date===todayKey());
    const sessions=getSessions(today),breaks=getBreaks(today);
-   let status="未出勤",cls="absent",detail="今日はまだ出勤していません";
-   if(activeBreak(today)){status="休憩中";cls="breaking";detail=`休憩開始 ${breaks[breaks.length-1].start||"--:--"}`;}
-   else if(activeSession(today)){status="勤務中";cls="working";detail=`出勤 ${sessions[sessions.length-1].in||"--:--"}`;}
-   else if(sessions.length){status="退勤済み";cls="finished";detail=`最終退勤 ${lastOut(today)||"--:--"}`;}
+   let status="未出勤",cls="absent",detail="出勤 --:--　退勤 --:--";
+   if(activeBreak(today)){status="休憩中";cls="breaking";detail=`出勤 ${sessions[sessions.length-1].in||"--:--"}　退勤 --:--`;}
+   else if(activeSession(today)){status="勤務中";cls="working";detail=`出勤 ${sessions[sessions.length-1].in||"--:--"}　退勤 --:--`;}
+   else if(sessions.length){status="退勤済み";cls="finished";detail=`出勤 ${firstIn(today)||"--:--"}　退勤 ${lastOut(today)||"--:--"}`;}
    const row=document.createElement("div");row.className="attendance-person";
-   row.innerHTML=`<div class="attendance-person-head"><span class="attendance-person-name">${name}</span><span class="attendance-status ${cls}">${status}</span></div><div class="attendance-person-info"><div class="attendance-info"><span>今日の勤務回数</span><strong>${sessions.length}回</strong></div><div class="attendance-info"><span>今日の休憩回数</span><strong>${breaks.length}回</strong></div><div class="attendance-info" style="grid-column:1/-1"><span>現在の状況</span><strong>${detail}</strong></div></div>`;
+   row.innerHTML=`<div class="attendance-person-head"><span class="attendance-person-name">${name}</span><span class="attendance-status ${cls}">${status}</span></div><div class="attendance-person-info"><div class="attendance-info" style="grid-column:1/-1"><span>現在の状況</span><strong>${detail}</strong></div></div>`;
    if(list)list.appendChild(row.cloneNode(true));
    if(mainList)mainList.appendChild(row.cloneNode(true));
-   if(publicList)publicList.appendChild(row);
+   if(publicList)publicList.appendChild(row.cloneNode(true));
  });
  const stamp=`最終更新 ${fmtTime(new Date())}`;
  if(updated)updated.textContent=stamp;
@@ -484,7 +496,7 @@ renderUsers();showApp();setInterval(()=>{
  document.getElementById("clock").textContent=`${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
  document.getElementById("today").textContent=now.toLocaleDateString("ja-JP",{year:"numeric",month:"long",day:"numeric",weekday:"long"});
 },1000);
-if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=35").catch(console.error))}
+if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=36").catch(console.error))}
 </script>
 </body>
 </html>
