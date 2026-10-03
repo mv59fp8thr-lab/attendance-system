@@ -1,4 +1,4 @@
-const CACHE_NAME = 'attendance-v41-list-auto-open';
+const CACHE_NAME = 'attendance-v42-list-auto-open';
 const ASSETS = ['./','./index.html','./manifest.json'];
 self.addEventListener('install', event => {
   event.waitUntil(
