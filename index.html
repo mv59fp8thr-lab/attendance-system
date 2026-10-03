@@ -29,6 +29,15 @@
   <button class="primary" id="addUserBtn" type="button">この名前で開始</button>
   <div id="existingUsers"></div>
   <button class="admin-btn" id="adminBtn" type="button">🔐 管理者メニュー</button>
+  <button class="secondary" id="publicAttendanceBtn" type="button" style="margin-top:12px">👥 勤怠一覧</button>
+</section>
+
+<section class="card hidden" id="publicAttendancePanel">
+  <div class="admin-head"><h2>勤怠一覧</h2><span class="tag">リアルタイム</span></div>
+  <p class="notice">登録されている全員の現在の状態を確認できます。</p>
+  <div class="attendance-list" id="publicAttendanceList"></div>
+  <div class="notice attendance-list-updated" id="publicAttendanceListUpdated"></div>
+  <button class="secondary" id="closePublicAttendanceBtn" type="button" style="margin-top:12px">← 利用者登録に戻る</button>
 </section>
 
 <div id="app" class="hidden">
@@ -292,8 +301,8 @@ function adminPunch(type){
 }
 
 function renderAttendanceList(){
- const list=document.getElementById("attendanceList"),updated=document.getElementById("attendanceListUpdated"),mainList=document.getElementById("mainAttendanceList"),mainUpdated=document.getElementById("mainAttendanceListUpdated");
- if(!list&&!mainList)return;
+ const list=document.getElementById("attendanceList"),updated=document.getElementById("attendanceListUpdated"),mainList=document.getElementById("mainAttendanceList"),mainUpdated=document.getElementById("mainAttendanceListUpdated"),publicList=document.getElementById("publicAttendanceList"),publicUpdated=document.getElementById("publicAttendanceListUpdated");
+ if(!list&&!mainList&&!publicList)return;
  const us=users();
  if(!us.length){list.innerHTML='<div class="empty">登録されている利用者がいません</div>';if(updated)updated.textContent="";return;}
  list.innerHTML="";
@@ -306,9 +315,14 @@ function renderAttendanceList(){
    else if(sessions.length){status="退勤済み";cls="finished";detail=`最終退勤 ${lastOut(today)||"--:--"}`;}
    const row=document.createElement("div");row.className="attendance-person";
    row.innerHTML=`<div class="attendance-person-head"><span class="attendance-person-name">${name}</span><span class="attendance-status ${cls}">${status}</span></div><div class="attendance-person-info"><div class="attendance-info"><span>今日の勤務回数</span><strong>${sessions.length}回</strong></div><div class="attendance-info"><span>今日の休憩回数</span><strong>${breaks.length}回</strong></div><div class="attendance-info" style="grid-column:1/-1"><span>現在の状況</span><strong>${detail}</strong></div></div>`;
-   list.appendChild(row);
+   if(list)list.appendChild(row.cloneNode(true));
+   if(mainList)mainList.appendChild(row.cloneNode(true));
+   if(publicList)publicList.appendChild(row);
  });
- if(updated)updated.textContent=`最終更新 ${fmtTime(new Date())}`;
+ const stamp=`最終更新 ${fmtTime(new Date())}`;
+ if(updated)updated.textContent=stamp;
+ if(mainUpdated)mainUpdated.textContent=stamp;
+ if(publicUpdated)publicUpdated.textContent=stamp;
 }
 
 function renderHistoryFor(name){
@@ -456,11 +470,11 @@ function punch(type){
 function toggleBreak(){const name=currentUser();if(!name)return;const records=loadRecords(name),key=todayKey(),time=fmtTime(new Date());const r=records.find(x=>x.date===key);if(!r||!activeSession(r))return;if(!Array.isArray(r.breaks))r.breaks=[];if(activeBreak(r))r.breaks[r.breaks.length-1].end=time;else r.breaks.push({start:time,end:null});saveRecords(name,records);render()}
 
 function on(id,event,fn){const el=document.getElementById(id);if(el)el.addEventListener(event,fn)}
-on("addUserBtn","click",addUser);on("calendarUserSelect","change",()=>{calendarSelectedDate="";renderCalendar()});on("calendarPrevBtn","click",()=>moveCalendarMonth(-1));on("calendarNextBtn","click",()=>moveCalendarMonth(1));on("adminHistoryUserSelect","change",()=>renderHistoryFor(document.getElementById("adminHistoryUserSelect").value));on("adminPunchInBtn","click",()=>adminPunch("in"));on("adminPunchOutBtn","click",()=>adminPunch("out"));on("monthlyUserSelect","change",renderMonthlySummary);on("monthlyMonthSelect","change",renderMonthlySummary);on("editUserSelect","change",populateEditDates);on("editDateSelect","change",loadEditRecord);on("addBreakEditBtn","click",addEditBreak);on("saveAttendanceEditBtn","click",saveAttendanceEdit);on("adminBtn","click",openAdmin);on("closeAdminBtn","click",closeAdmin);on("changeAdminPasswordBtn","click",changeAdminPassword);on("nameInput","keydown",e=>{if(e.key==="Enter")addUser()});on("switchUserBtn","click",switchUser);on("inBtn","click",()=>punch("in"));on("outBtn","click",()=>punch("out"));on("breakBtn","click",toggleBreak);
+on("addUserBtn","click",addUser);on("publicAttendanceBtn","click",()=>{document.getElementById("userSetup").classList.add("hidden");document.getElementById("publicAttendancePanel").classList.remove("hidden");renderAttendanceList();});on("closePublicAttendanceBtn","click",()=>{document.getElementById("publicAttendancePanel").classList.add("hidden");document.getElementById("userSetup").classList.remove("hidden");});on("calendarUserSelect","change",()=>{calendarSelectedDate="";renderCalendar()});on("calendarPrevBtn","click",()=>moveCalendarMonth(-1));on("calendarNextBtn","click",()=>moveCalendarMonth(1));on("adminHistoryUserSelect","change",()=>renderHistoryFor(document.getElementById("adminHistoryUserSelect").value));on("adminPunchInBtn","click",()=>adminPunch("in"));on("adminPunchOutBtn","click",()=>adminPunch("out"));on("monthlyUserSelect","change",renderMonthlySummary);on("monthlyMonthSelect","change",renderMonthlySummary);on("editUserSelect","change",populateEditDates);on("editDateSelect","change",loadEditRecord);on("addBreakEditBtn","click",addEditBreak);on("saveAttendanceEditBtn","click",saveAttendanceEdit);on("adminBtn","click",openAdmin);on("closeAdminBtn","click",closeAdmin);on("changeAdminPasswordBtn","click",changeAdminPassword);on("nameInput","keydown",e=>{if(e.key==="Enter")addUser()});on("switchUserBtn","click",switchUser);on("inBtn","click",()=>punch("in"));on("outBtn","click",()=>punch("out"));on("breakBtn","click",toggleBreak);
 // 旧バージョンの共通勤怠データが残っていても、複数利用者へ混ざらないようにする。
 try{if(users().length>1)localStorage.removeItem(OLD_KEY);}catch(e){}
 renderUsers();showApp();setInterval(render,1000);
-if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=32").catch(console.error))}
+if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=33").catch(console.error))}
 </script>
 </body>
 </html>
